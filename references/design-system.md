@@ -878,19 +878,29 @@ These macros are registered in the `renderMathInElement` call in the HTML templa
 | `\d` | d (upright) | Exact differential: `\d U`, `\d t` |
 | `\e` | e (upright) | Euler's number: `\e^{x}` |
 | `\i` | i (upright) | Imaginary unit |
+| `\cdotp` | · | Centre dot for unit products: `\text{J}\cdotp\text{mol}` (alias of `\cdot`) |
+| `\unit` | (upright text) | siunitx-style unit text: `\unit{m/s}` → upright `m/s` |
+| `\celsius` | °C | Degrees Celsius with correct base: `37\celsius` → 37°C |
+| `\bm` | **bold** | Bold symbol (alias of `\boldsymbol`); for single-letter vectors prefer `\vec{}` |
+
+These nine macros are registered in the template's `renderMathInElement` call, so they
+render correctly in every generated file. `build_and_check.py` is **macro-aware**: a
+command your file registers as a macro is not flagged, so using `\celsius` / `\unit` /
+`\bm` here is fine. The one caveat is portability — if you paste a fragment into a page
+that does **not** carry these macro definitions, it breaks; inside our self-contained
+single-file output that never happens.
 
 ## KaTeX Forbidden Commands (will produce red error text)
 
-Never use these — they are LaTeX packages not supported by KaTeX:
+Never use these — they are LaTeX packages KaTeX does not support and the template does
+**not** register as macros (contrast the macro table above, whose commands are safe):
 
 | Do NOT write | Write instead |
 |---|---|
-| `^\circ\text{C}` without base | `{}^\circ\text{C}` or `\degree\text{C}` |
-| `\celsius` | `{}^\circ\text{C}` |
-| `\unit{m/s}` (siunitx) | `\,\text{m/s}` |
+| `^\circ\text{C}` without base | `{}^\circ\text{C}` or `\celsius` |
 | `\SI{9.8}{m/s^2}` | `9.8\,\text{m/s}^2` |
 | `\qty{1}{J}` | `1\,\text{J}` |
-| `\bm{v}` | `\vec{v}` |
+| `\si{...}` | spell the unit in `\text{}` |
 | `\tensor{}` | Use index notation |
 | `\cancel{}` | Use `\not` or rephrase |
 | `\ket{}`, `\bra{}` | `|\psi\rangle`, `\langle\psi|` |

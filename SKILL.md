@@ -371,9 +371,9 @@ Common fixes:
 
 | Error | Cause | Fix |
 |---|---|---|
-| `^\circ` without base | starts the formula | Use `{}^\circ\text{C}` |
-| `\degree`, `\celsius` | not in KaTeX (note: `\degree` is pre-defined as a macro in this template) | Use `{}^\circ` |
-| `\unit{}` | siunitx package, not KaTeX | Use `\,\text{m/s}` |
+| `^\circ` without base | starts the formula | Use `{}^\circ\text{C}`, or the `\degree` / `\celsius` macro |
+| `\degree`, `\celsius`, `\unit`, `\bm`, `\cdotp` | — | **Not errors** — these are pre-registered template macros (see `design-system.md` → KaTeX Pre-defined Macros). Use them freely; `build_and_check.py` is macro-aware and won't flag them. |
+| `\SI{}`, `\qty{}`, `\si{}` | siunitx, not KaTeX and not a macro | Spell the unit: `9.8\,\text{m/s}^2` |
 | `\boldsymbol` in display | missing amsmath | Use `\mathbf` or `\bm` |
 
 ### Check 2: Silent Unicode failures (CRITICAL — not caught by Check 1)
@@ -439,4 +439,10 @@ NEVER use Unicode `·` inside `\text{}`. Use `\cdot` (LaTeX command) instead.
 
 Inside `$...$` or `$$...$$`: ONLY ASCII and LaTeX commands — never Unicode symbols.
 
-See `references/design-s
+See `references/design-system.md` → **KaTeX Pre-defined Macros** and **KaTeX Forbidden Commands** for the complete macro / unit / forbidden-command tables. These naked-Unicode-in-math slips are silent — the browser shows no error — so always run the static scan before presenting:
+
+```bash
+python3 scripts/build_and_check.py check <file>.html
+```
+
+It flags every `·`, `°`, `−`, `×` that lands inside a math span (and is macro-aware: a command your file registers as a macro is not reported, while the same command used without a definition still is). Treat a FAIL as blocking — never ship a file until the scan is clean.
