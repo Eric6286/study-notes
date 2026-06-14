@@ -375,6 +375,24 @@ When the user supplies a PDF:
 - **Notation**: use the book's variable names exactly — never substitute different symbols
 - **Language**: keep Chinese text in Chinese; reproduce equations verbatim. Add explanation and intuition on top of — not instead of — the source content.
 
+### Source-grounded fidelity mode (optional)
+
+Trigger when the user asks for 忠实模式 / 对照课本 / 标注出处 / "anchor everything to the
+book", or whenever maximum verifiability is wanted. In this mode, **every** formula box and
+key conclusion carries a `.src-ref` badge pointing to its exact place in the source —
+`见课本 p.123 式(5-7)` — so the student can check each claim against the original book, the
+way NotebookLM grounds answers in citations.
+
+- `scripts/extract_pdf.py text` already prints `--- PAGE N ---` markers; record the page each
+  formula/definition came from while reading, and attach it as `<span class="src-ref">见课本
+  p.N 式(X-Y)</span>` next to the `.fbox` label (CSS in `references/design-system.md` →
+  **Source citation tag**).
+- Put one `.fidelity-banner` under the header so the reader knows every item is sourced.
+- **Honesty (hard rule):** only cite a page/equation number you actually have from the
+  extracted source. If you didn't read that page, omit the badge — **never invent a page
+  number.** A fabricated citation is worse than none. This is the same discipline as the
+  answer-verification gate: claims are grounded or they are hedged, never fabricated.
+
 ## Post-generation Formula Check (MANDATORY before presenting)
 
 Run `scripts/build_and_check.py` first (it automates Checks 2 & 3 plus div-balance and forbidden-command scans on the static file). Then run all three checks below. Only present the file when all pass.

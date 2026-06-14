@@ -1133,3 +1133,36 @@ The TSV is `front <TAB> back <TAB> tags` with a `#separator:tab` / `#html:true` 
 `#tags column:3` header; math is converted to Anki's MathJax (`\(…\)` / `\[…\]`) so cards
 render on import (Anki → File → Import → Fields separated by Tab). Add `--no-quiz` to
 export only the authored deck.
+
+---
+
+## Source citation tag `.src-ref` (for source-grounded fidelity mode)
+
+A small, muted badge that anchors a formula or conclusion to its exact place in the
+source book, so the student can verify every claim against the original — the
+"source-grounded" trust model. Use it next to an `.fbox` label or right after a stated
+result.
+
+```css
+.src-ref{display:inline-block;font-size:11px;font-weight:600;color:var(--text3);
+  background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+  padding:1px 7px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;white-space:nowrap;}
+.src-ref::before{content:"\1F4D6";margin-right:4px;opacity:.8;}
+/* Banner shown at the top of a fidelity-mode page */
+.fidelity-banner{font-size:12.5px;color:var(--text2);background:var(--bg2);
+  border:1px dashed var(--border);border-radius:8px;padding:8px 14px;margin-bottom:18px;text-align:center;}
+```
+
+```html
+<div class="fbox">
+  <div class="flabel" style="color:var(--blue)">高斯定理 <span class="src-ref">见课本 p.123 式(5-7)</span></div>
+  <div class="frow">$$\oiint_S \vec{E}\cdot\mathrm{d}\vec{S} = \frac{q}{\varepsilon_0}$$</div>
+</div>
+
+<!-- once, under the header -->
+<div class="fidelity-banner">忠实模式：每个公式/结论都标注了课本出处，可逐条对照原书核验。</div>
+```
+
+**Hard rule (honesty):** only ever write a page/equation number you actually have from
+the extracted source. If you did not read that page, omit the `.src-ref` — never invent a
+citation. A fabricated page number is worse than none.
