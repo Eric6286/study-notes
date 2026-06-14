@@ -1097,3 +1097,39 @@ To tint a quiz with a section colour, set `style="--accent:var(--teal);--accent-
 
 Validation: the static checks treat a quiz as ordinary cards/divs, so `build_and_check.py`
 covers it; confirm the answer key by opening the file and clicking through once.
+
+---
+
+## Anki flashcard deck (optional export)
+
+The notes can carry their own spaced-repetition deck **without breaking the single-file
+model**: embed a hidden block of plain HTML cards (NOT JSON — backslashes are literal in
+HTML, so `$\tfrac{3}{2}R$` needs no escaping; in JSON `\t`/`\n` would silently corrupt
+`\tfrac`/`\nabla`). It is invisible in the page; `scripts/make_anki.py` exports it to an
+Anki-importable TSV on demand.
+
+```html
+<!-- place once, anywhere in the body; the `hidden` attribute keeps it off-screen -->
+<div id="anki-deck" hidden>
+  <div class="anki-card" data-tags="热学 第一定律">
+    <div class="anki-front">等温过程理想气体内能如何变化？</div>
+    <div class="anki-back">$\Delta U = 0$（内能只是温度的函数，$T$ 不变）</div>
+  </div>
+  <div class="anki-card" data-tags="热学 热容">
+    <div class="anki-front">单原子理想气体定容摩尔热容 $C_{V,m}$？</div>
+    <div class="anki-back">$$C_{V,m}=\tfrac{3}{2}R$$（3 个平动自由度）</div>
+  </div>
+</div>
+```
+
+Write one card per high-value fact/formula/pitfall; use ordinary `$…$` / `$$…$$` math.
+Export (also pulls in any `.quiz` questions as cards):
+
+```bash
+python3 scripts/make_anki.py <notes>.html            # → <notes>.tsv
+```
+
+The TSV is `front <TAB> back <TAB> tags` with a `#separator:tab` / `#html:true` /
+`#tags column:3` header; math is converted to Anki's MathJax (`\(…\)` / `\[…\]`) so cards
+render on import (Anki → File → Import → Fields separated by Tab). Add `--no-quiz` to
+export only the authored deck.

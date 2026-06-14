@@ -304,6 +304,13 @@ yourself on*. Full CSS + HTML pattern + the one-copy JS are in `references/desig
 **Self-test quiz widget**. Write the questions from the chapter's own pitfalls and exam points;
 set `data-answer` to the 0-based correct index and click through once to confirm the key.
 
+**Optional — Anki deck.** The notes can also carry a hidden spaced-repetition deck (a
+`<div id="anki-deck" hidden>` of `.anki-card` front/back blocks — plain HTML, no JSON
+escaping of LaTeX). It stays invisible in the single file; `python3 scripts/make_anki.py
+<notes>.html` exports it (plus any quiz questions) to an Anki-importable TSV. Format in
+`references/design-system.md` → **Anki flashcard deck**. Emit it only when the user wants
+flashcards; one card per high-value fact/formula/pitfall.
+
 ### Within every concept section, cover ALL of the following that apply:
 
 1. **Intuition / physical picture** — analogy, diagram description, or "why this makes sense" before any math. This is mandatory — never lead with a formula.
