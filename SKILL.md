@@ -293,7 +293,16 @@ Synthesis: Connections between concepts, unified perspective
 Applications: Real physical/mathematical/engineering uses
 Summary table: Side-by-side comparison of key formulas/ideas
 Practice problems: Graded difficulty, all major question types
+本章自测 (optional): an interactive self-test quiz — active recall, not passive re-reading
 ```
+
+**Optional — interactive 本章自测 (MODE A & MODE B).** After the practice problems, you may
+add a `.quiz` card: 3–8 multiple-choice questions that grade on click (green/red), reveal an
+explanation, track a running score, and remember answers in `localStorage` — all self-contained
+in the single file. It turns the notes from something you *read* into something you can *test
+yourself on*. Full CSS + HTML pattern + the one-copy JS are in `references/design-system.md` →
+**Self-test quiz widget**. Write the questions from the chapter's own pitfalls and exam points;
+set `data-answer` to the 0-based correct index and click through once to confirm the key.
 
 ### Within every concept section, cover ALL of the following that apply:
 

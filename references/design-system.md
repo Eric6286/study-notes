@@ -983,3 +983,117 @@ with open(path, 'w', encoding='utf-8') as f: f.write(strip_boxed(text))
 ### CSS reminder — do NOT add `display:inline-block` to `.katex`
 
 Some "fixes" found online suggest `.katex-display > .katex { display: inline-block }` to make tall formulas wrap properly. **This makes the `\boxed{}` issue worse** by forcing KaTeX's outer span into inline-block layout, which interacts badly with the `\boxed{}` border. The default block layout for `.katex-display > .katex` is correct — leave it alone.
+
+---
+
+## Self-test quiz widget (interactive active-recall — optional)
+
+A `.quiz` card turns the end of a chapter into **active recall** instead of passive
+re-reading: each question grades on click (green correct / red wrong), reveals its
+explanation, updates a running score, and remembers answers in `localStorage`. It is
+**self-contained** — pure HTML/CSS/JS in the single file, no dependency, no account —
+so it fits the "one HTML, offline, owned by the student" model. KaTeX renders inside
+stems, options, and explanations.
+
+Use it as an **optional** closing card in MODE A / MODE B notes (a `本章自测` after the
+summary). Keep it to 3–8 questions per chapter; every option and explanation may contain
+`$…$` math. Set `data-answer` to the **0-based index** of the correct option.
+
+### CSS (add to the `<style>` block)
+
+```css
+/* ── Self-test quiz widget ── */
+.quiz{--accent:var(--purple);--accent-light:var(--purple-light)}
+.quiz-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.quiz-head .quiz-title{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.quiz-score{font-size:13px;font-weight:700;color:var(--text2);background:var(--bg3);border-radius:20px;padding:3px 12px;white-space:nowrap}
+.quiz-q{border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-bottom:12px;background:var(--bg)}
+.quiz-q:last-child{margin-bottom:0}
+.quiz-stem{font-size:14px;font-weight:600;margin-bottom:10px}
+.quiz-stem .qn{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:6px;
+  background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:700;margin-right:8px}
+.quiz-opt{display:block;width:100%;text-align:left;border:1px solid var(--border);background:var(--bg2);color:var(--text);
+  border-radius:7px;padding:9px 13px;margin:6px 0;font:inherit;font-size:13.5px;cursor:pointer;transition:background .12s,border-color .12s}
+.quiz-opt:hover:not(:disabled){background:var(--bg3)}
+.quiz-opt:disabled{cursor:default}
+.quiz-opt .mk{float:right;font-weight:700}
+.quiz-opt.correct{background:var(--green-light);border-color:rgba(59,109,17,.5);color:var(--green-dark)}
+.quiz-opt.wrong{background:var(--red-light);border-color:rgba(163,45,45,.45);color:var(--red-dark)}
+.quiz-explain{display:none;margin-top:8px;font-size:13px;color:var(--text2);background:var(--bg3);
+  border-left:3px solid var(--accent);border-radius:0 7px 7px 0;padding:9px 13px;line-height:1.7}
+.quiz-q.answered .quiz-explain{display:block}
+.quiz-reset{margin-top:6px;font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;text-decoration:underline}
+```
+
+### HTML pattern (one `.quiz` card; `data-answer` = 0-based correct index)
+
+```html
+<div class="card quiz" data-quiz="ch5-selftest">
+  <div class="quiz-head">
+    <span class="quiz-title">★ 本章自测</span>
+    <span class="quiz-score" data-score>0 / 3</span>
+  </div>
+
+  <div class="quiz-q" data-answer="1">
+    <div class="quiz-stem"><span class="qn">1</span>理想气体等温膨胀过程中，下列哪个量保持不变？</div>
+    <button class="quiz-opt">内能增加</button>
+    <button class="quiz-opt">温度 $T$ 不变，故内能 $U$ 不变</button>
+    <button class="quiz-opt">系统不做功</button>
+    <div class="quiz-explain">等温过程 $T$ 不变，理想气体内能只是温度的函数，故 $\Delta U=0$。</div>
+  </div>
+
+  <!-- more .quiz-q blocks … -->
+</div>
+```
+
+To tint a quiz with a section colour, set `style="--accent:var(--teal);--accent-light:var(--teal-light)"` on the `.quiz` card.
+
+### JS (add ONE copy before `</body>`, after the nav script)
+
+```html
+<script>
+/* Self-test quiz: click an option → grade, reveal explanation, update score,
+   persist per-question result in localStorage. Self-contained, no dependencies. */
+(function(){
+  document.querySelectorAll('.quiz').forEach(function(quiz){
+    var key='quiz:'+location.pathname+':'+(quiz.dataset.quiz||'q');
+    var saved={};
+    try{saved=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+    var qs=[].slice.call(quiz.querySelectorAll('.quiz-q'));
+    var scoreEl=quiz.querySelector('[data-score]');
+    function updateScore(){
+      var correct=qs.filter(function(q){return q.dataset.result==='1'}).length;
+      var done=qs.filter(function(q){return q.dataset.result!==undefined}).length;
+      if(scoreEl) scoreEl.textContent=correct+' / '+qs.length+(done<qs.length?'（已答 '+done+'）':'');
+    }
+    function grade(q,picked){
+      var ans=+q.dataset.answer, opts=q.querySelectorAll('.quiz-opt');
+      opts.forEach(function(o,i){
+        o.disabled=true;
+        if(i===ans){o.classList.add('correct');o.querySelector('.mk')||o.insertAdjacentHTML('beforeend','<span class="mk">✓</span>');}
+        else if(i===picked){o.classList.add('wrong');o.insertAdjacentHTML('beforeend','<span class="mk">✗</span>');}
+      });
+      q.classList.add('answered');
+      q.dataset.result=(picked===ans)?'1':'0';
+      saved[[].indexOf.call(qs,q)]=picked;
+      try{localStorage.setItem(key,JSON.stringify(saved))}catch(e){}
+      updateScore();
+    }
+    qs.forEach(function(q,qi){
+      q.querySelectorAll('.quiz-opt').forEach(function(o,i){
+        o.addEventListener('click',function(){if(!q.classList.contains('answered'))grade(q,i);});
+      });
+      if(saved[qi]!==undefined) grade(q,saved[qi]);
+    });
+    updateScore();
+    var reset=document.createElement('button');
+    reset.className='quiz-reset';reset.textContent='重做本测';
+    reset.addEventListener('click',function(){try{localStorage.removeItem(key)}catch(e){}location.reload();});
+    quiz.appendChild(reset);
+  });
+})();
+</script>
+```
+
+Validation: the static checks treat a quiz as ordinary cards/divs, so `build_and_check.py`
+covers it; confirm the answer key by opening the file and clicking through once.
