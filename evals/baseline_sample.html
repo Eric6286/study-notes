@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>热力学第一定律 学习笔记</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:20px;line-height:1.6}</style>
+</head>
+<body>
+<!-- Representative of what a generic assistant produces WITHOUT the study-notes skill:
+     plain prose, basic KaTeX, no design system, no collapsibles, no navigation,
+     and Unicode symbols written straight into math (a silent KaTeX failure). -->
+<h1>热力学第一定律 学习笔记</h1>
+
+<h2>1. 内能与第一定律</h2>
+<p>系统内能的变化等于吸收的热量减去对外做的功：</p>
+<p>$$\Delta U = Q - W$$</p>
+<p>其中热容 $C_{V,m} = \frac{5}{2}R = 20.8 \text{J/(mol·K)}$，定压热容 $C_{p,m} = \frac{7}{2}R$。</p>
+
+<h2>2. 等温过程</h2>
+<p>理想气体等温过程 $T = 27°C$ 保持不变，做功为：</p>
+<p>$$W = nRT \ln\frac{V_2}{V_1}$$</p>
+
+<h2>3. 绝热过程</h2>
+<p>绝热过程满足 $pV^\gamma = $ 常数，其中 $\gamma = C_p / C_V$。</p>
+<p>例题：1 mol 理想气体从 $0°C$ 绝热压缩，求末温。（解答：略）</p>
+
+<h2>4. 卡诺循环</h2>
+<p>效率 $\eta = 1 - \frac{T_2}{T_1}$，温度单位为开尔文。</p>
+</body>
+</html>
