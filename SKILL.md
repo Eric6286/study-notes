@@ -398,6 +398,17 @@ for m in re.finditer(r'(\\\$\\\$[\s\S]*?\\\$\\\$|\\\$[^\\\$]+?\\\$)', html):
 
 Fix: `\text{J·mol}` → `\text{J}\cdot\text{mol}`, `°` → `{}^\circ`, `−` → `-`, `×` → `\times`, `≈` → `\approx`.
 
+**Auto-repair (recovery):** to rewrite every naked-Unicode-in-math hit in place instead of by hand:
+
+```bash
+python3 scripts/fix_math.py <file>.html        # writes a .bak, then re-run the check
+```
+
+It only touches inside `$…$` / `$$…$$` (prose and SVG are left alone) and handles the
+`\text{}` case correctly (a `·` inside `\text{J/(mol·K)}` becomes `\text{J/(mol}\cdot\text{K)}`,
+not a literal `\cdot` stuck inside the text group). Prefer writing it right the first time;
+this is for cleaning up a file that already slipped.
+
 ### Check 3: `\boxed{}` inside HTML containers (CRITICAL — silent visual failure)
 
 `\boxed{}` wrapped around tall formulas (containing `\dfrac`, `\sqrt`, matrices) inside `.fbox` / `.big-formula` / `.callout` / `.answer-box` renders as an empty grey rectangle that **covers** the formula text. KaTeX raises NO error — Check 1 misses it entirely. The HTML wrappers already provide visible boxes; nested `\boxed{}` is redundant emphasis that breaks rendering.
