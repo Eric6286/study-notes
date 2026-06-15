@@ -3,6 +3,14 @@
 This file explains how to run MODE A and MODE B **as a workflow** instead of a single
 giant pass, and — most importantly — how to **verify** content so answers are correct.
 
+## Contents
+
+- **Why a single pass produces low-quality output** — failure → root-cause → fix table
+- **How to actually run it (Claude Code)** — dynamic workflow / parallel subagents / sequential; the **shared spec**
+- **MODE A workflow** — plan → fan-out (one unit/section) → verify → assemble
+- **MODE B workflow** — concept map → solve+verify every problem → generate → weave in → self-test
+- **Verification checklist (MANDATORY per problem)** — the blind double-solve + compute-with-code gate
+
 ## Why a single pass produces low-quality MODE B output (and how this fixes it)
 
 When one pass has to (a) re-teach a whole chapter AND (b) solve every homework problem,

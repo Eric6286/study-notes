@@ -1,6 +1,6 @@
 ---
 name: study-notes
-description: Generate polished HTML study notes AND full homework solutions for academic subjects, especially STEM (physics, math, chemistry, engineering, CS). Trigger on requests to create study notes, learning notes, a study guide, lecture notes, or self-study reference — e.g. "make me notes on X", "help me learn X", "summarize X for an exam". Also trigger when the user uploads a PDF textbook or course material and asks for review notes, 学习笔记, or 复习笔记. Also trigger when the user gives homework or exercise problems (作业题 / 习题) and wants either study notes for the chapter those problems test (re-learning the chapter through its exercises) or full step-by-step solutions as a standalone HTML page, with each problem and its figure shown (simple figures as inline SVG, complex or photo figures embedded from the original) and each solution collapsed. Output is one standalone HTML file with KaTeX math, color-coded sections, collapsible derivations and solutions, callouts, worked examples, and practice problems.
+description: Generate polished, standalone HTML study notes AND full step-by-step homework solutions for academic subjects, especially STEM (physics, math, chemistry, engineering, CS). Trigger on requests to create study notes, learning notes (学习笔记 / 复习笔记), a study guide, lecture notes, or self-study reference — e.g. "make me notes on X", "help me learn X", "summarize X for an exam"; when the user uploads a PDF textbook or course material and asks for review notes; or when the user gives homework / 习题 (作业题) and wants either re-learning notes for the chapter those problems test, or full collapsible solutions (each problem and figure shown, each solution folded). Output is one HTML file with KaTeX math, color-coded sections, collapsible derivations and solutions, callouts, worked examples, and practice problems. Not for slide/课件 exam cheat-sheets (use summarize-slides) or business/research reports (use visual-report).
 ---
 
 # Study Notes Skill
@@ -10,6 +10,8 @@ Generates detailed, exam-ready HTML study notes — and full homework solutions 
 **Default audience assumption**: treat the reader as someone encountering this subject for the first time. Write as if they attended lectures but are confused and need everything explained clearly — intuition first, then rigor, then worked examples. Never assume prior knowledge beyond what is stated as a prerequisite.
 
 **Path convention (read this first).** The examples below use `/mnt/user-data/uploads/` (inputs) and `/mnt/user-data/outputs/` (outputs) as **placeholders** — these are the Claude.ai web paths. In **Claude Code** (or any other environment) substitute the real paths: read inputs from wherever the user's files actually are, and write the final HTML to the current working directory (or a directory the user names). Every helper script in `scripts/` takes paths as arguments, so nothing is hard-coded — call them with the paths that exist in your environment.
+
+**Environment portability.** Commands below say `python3` and end with `present_files` — both are Claude.ai-web conventions. On a local machine (e.g. Windows) the interpreter is usually just `python`, and there is no `present_files` — instead, simply report the absolute path of the finished HTML so the user can open it. Use whichever interpreter name resolves in the current environment.
 
 ---
 
@@ -78,13 +80,13 @@ verification are not.
 
 **Activate this mode** when the user uploads a PDF textbook or course material and asks for 学习笔记 / 复习笔记 / review notes / organised notes from the book. (With no PDF and only a topic, use the same Content Structure from scratch — "MODE A scratch".)
 
-Follow Steps 0–4 below for PDF handling, then generate content using the **full Content Structure** (same depth as scratch mode — derivations, intuition, examples, everything), **run as the four-phase workflow in §0.5 / `references/workflow-orchestration.md`** (plan the TOC + shared spec once, fan-out one unit per section, verify each section incl. every worked-example answer, assemble + coherence pass). The steps below only govern how to read the PDF and handle special formatting rules; they do NOT reduce the depth or completeness of the notes.
+Follow Steps 0–4 below for PDF handling, then generate content using the **full Content Structure** (same depth as scratch mode — derivations, intuition, examples, everything), **run as the four-phase workflow in §0.5 / `references/workflow-orchestration.md`** (plan → fan-out → verify → assemble; full detail there). The steps below only govern how to read the PDF and handle special formatting rules; they do NOT reduce the depth or completeness of the notes.
 
 **Exception — compact/formula-only mode**: If the user explicitly asks for a condensed version (e.g., "只要公式", "精简版", "只整理公式和概念"), then limit content to core formulas and key concepts only for that request.
 
 ### Step 0 — Read the PDF
 
-Use the helper script (preferred — it auto-detects scanned PDFs and renders page images):
+Use the helper script — it auto-detects scanned PDFs, prints `--- PAGE N ---` markers, and renders page images:
 
 ```bash
 python3 scripts/extract_pdf.py text <input.pdf> -o <outdir>/extracted.txt
@@ -92,22 +94,7 @@ python3 scripts/extract_pdf.py text <input.pdf> -o <outdir>/extracted.txt
 python3 scripts/extract_pdf.py images <input.pdf> -o <outdir>/pages --dpi 150
 ```
 
-Or inline, if you prefer not to use the script:
-
-```bash
-pip install pymupdf --break-system-packages -q
-python3 -c "
-import fitz
-doc = fitz.open('<input.pdf>')
-for i, page in enumerate(doc):
-    txt = page.get_text()
-    if txt.strip():
-        print(f'--- PAGE {i+1} ---'); print(txt)
-" > <outdir>/extracted.txt
-wc -l <outdir>/extracted.txt
-```
-
-If text extraction yields 0 / very few lines (scanned/image-only PDF), render pages to PNG (`scripts/extract_pdf.py images ...`) and use the Read tool to view each page image. Read ALL pages — never skip content.
+(The script wraps `pymupdf`; read its `--help` if you need the raw call.) If text extraction yields 0 / very few lines (scanned/image-only PDF), render pages to PNG and use the Read tool to view each page image. Read ALL pages — never skip content.
 
 Then extract the table of contents: note every chapter title, section number, and sub-section heading. This becomes the TOC in the HTML notes.
 
@@ -124,86 +111,20 @@ Sections or problems marked with `*`, `★`, or labelled 选学/选读 are **ele
 Rules:
 - **Skip** elective sections entirely if they contain no concepts relevant to the core curriculum.
 - **Include briefly** (one short card) if the section contains a formula or concept that cross-references non-elective material or is commonly tested.
-- **Mark every included elective item** with an `.elective-badge` span.
+- **Mark every included elective item** with an `.elective-badge` span, and append ` ★` (plain text) after its title in the TOC.
 - Never expand elective content to the same depth as core content.
 
-Elective badge CSS (add to `<style>` block in Part 1):
-
-```css
-.elective-badge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--amber-dark);
-  background: var(--amber-light);
-  border: 1px solid var(--amber);
-  border-radius: 4px;
-  padding: 1px 6px;
-  margin-left: 6px;
-  vertical-align: middle;
-  letter-spacing: 0.04em;
-}
-```
-
-Usage: `<h3 id="sX-X">§X.X 节标题 <span class="elective-badge">★ 选学</span></h3>`
-
-In the TOC, append ` ★` (plain text) after the title of any elective section link.
+CSS + usage markup: `references/design-system.md` → **MODE A note components → Elective badge**.
 
 ### Step 3 — Figures, images, and tables
 
-**Figures and diagrams**: In MODE A, do NOT draw SVG diagrams or embed base64 images unless the user explicitly asks. Instead write an inline reference:
-
-```html
-<p class="fig-ref">（见图 3-5：弹簧振子示意图）</p>
-```
-
-Add to `<style>` block:
-
-```css
-.fig-ref { color: var(--text3); font-size: 13px; font-style: italic;
-           padding: 4px 0 4px 12px; border-left: 3px solid var(--border); margin: 8px 0; }
-```
-
-Reference format: `（见图 X-X：图题）` — use the book's exact figure number and caption.
-
-(Note: MODE C is different — there figures are mandatory and either drawn as SVG or embedded from the original image. See MODE C.)
+**Figures and diagrams**: In MODE A, do NOT draw SVG diagrams or embed base64 images unless the user explicitly asks — write an inline `<p class="fig-ref">（见图 X-X：图题）</p>` reference using the book's exact figure number and caption. CSS + markup: `references/design-system.md` → **MODE A note components → Figure reference**. (MODE C is different — figures are mandatory there, drawn as SVG or embedded from the original; see MODE C.)
 
 **Tables**: Reproduce simple tables directly in the HTML using a `<table>` element inside a `.card`. Use the design system's table CSS (alternating row backgrounds). A table is "simple" if it has ≤ 8 columns and its content (text or short formulas) fits comfortably in a cell. For complex multi-page tables, write a reference instead: `（见表 X-X：表题）`.
 
 ### Step 4 — Example problems and exercises
 
-**All example problems (例题) and exercise answers/hints (答案、提示) MUST be placed inside collapsible `<details>` blocks.** Do not show them inline.
-
-Pattern:
-
-```html
-<div class="card">
-  <h3>例题 &amp; 练习</h3>
-
-  <details>
-    <summary>例 3-2　弹簧振子的周期</summary>
-    <div class="details-body">
-      <p><strong>题目：</strong>质量为 $m$ 的物体挂在劲度系数为 $k$ 的弹簧上，求振动周期。</p>
-      <p><strong>解：</strong>由 $F = -kx$ 和牛顿第二定律…</p>
-      <div class="fbox">$$T = 2\pi\sqrt{\frac{m}{k}}$$</div>
-    </div>
-  </details>
-
-  <details>
-    <summary>练习 3-4　答案与提示</summary>
-    <div class="details-body">
-      <p><strong>答案：</strong>$T = 0.63\,\text{s}$</p>
-      <p><strong>提示：</strong>代入 $m = 0.1\,\text{kg}$，$k = 10\,\text{N/m}$。</p>
-    </div>
-  </details>
-</div>
-```
-
-Rules:
-- The `<summary>` line always shows the problem number and title — always visible.
-- Full problem statement, solution steps, answer, and hints go inside `<div class="details-body">`.
-- If a section has no examples or exercises, omit this card entirely.
-- Chapter-end exercise answers: one `<details>` per exercise, grouped in a single card at the end of that chapter.
+**All example problems (例题) and exercise answers/hints (答案、提示) MUST be placed inside collapsible `<details>` blocks** — never inline. `<summary>` shows the problem number + title (always visible); statement, steps, answer, and hints go in `.details-body`. Omit the card if a section has no examples; group chapter-end exercise answers as one `<details>` per exercise in a single card at the chapter's end. Full HTML pattern: `references/design-system.md` → **MODE A note components → Collapsible example / exercise card**.
 
 ---
 
@@ -328,26 +249,7 @@ The notes should be detailed enough that a student who has attended lectures but
 
 ## TOC Structure — Hierarchical Outline (MANDATORY)
 
-Use `.toc-l1` / `.toc-l2` classes from the design system:
-
-```html
-<div class="toc">
-  <div class="toc-title">目录</div>
-  <div class="toc-l1">
-    <a href="#s8-1"><span class="sec-dot" style="background:var(--purple-mid)"></span>§8-1 液体的微观结构</a>
-    <div class="toc-l2">
-      <a href="#s8-1-1"><span class="sec-dot" style="background:var(--purple-mid)"></span>§8-1-1 近程有序性</a>
-      <a href="#s8-1-2"><span class="sec-dot" style="background:var(--purple-mid)"></span>§8-1-2 液晶 ★</a>
-    </div>
-  </div>
-  <div class="toc-l1">
-    <a href="#s8-2"><span class="sec-dot" style="background:var(--teal-mid)"></span>§8-2 热传导与扩散</a>
-    <div class="toc-l2">
-      <a href="#s8-2-1"><span class="sec-dot" style="background:var(--teal-mid)"></span>§8-2-1 傅里叶定律</a>
-    </div>
-  </div>
-</div>
-```
+Use `.toc-l1` / `.toc-l2` classes from the design system. Markup example: `references/design-system.md` → **HTML Page Template** (the `<div class="toc">` block).
 
 Rules:
 - `.toc-l1 > a` links to the `.sec-COLOR` wrapper (`id="s8-1"`)
@@ -413,21 +315,7 @@ Common fixes:
 ### Check 2: Silent Unicode failures (CRITICAL — not caught by Check 1)
 
 ```bash
-python3 scripts/build_and_check.py check <file>.html   # runs this automatically
-```
-
-Or inline:
-
-```bash
-python3 -c "
-import re
-html = open('<file>.html').read()
-for m in re.finditer(r'(\\\$\\\$[\s\S]*?\\\$\\\$|\\\$[^\\\$]+?\\\$)', html):
-    span = m.group()
-    if chr(0x00B7) in span or chr(0x00B0) in span or chr(0x2212) in span:
-        line = html[:m.start()].count('\n') + 1
-        print(f'Line {line}: dangerous Unicode in math: ...{span[:80]}...')
-"
+python3 scripts/build_and_check.py check <file>.html   # flags every naked ·/°/−/× inside a math span
 ```
 
 Fix: `\text{J·mol}` → `\text{J}\cdot\text{mol}`, `°` → `{}^\circ`, `−` → `-`, `×` → `\times`, `≈` → `\approx`.
@@ -457,16 +345,7 @@ Re-run all checks after fixing.
 
 ## Math Rendering
 
-Include in `<head>`:
-
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
-  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
-```
-
-(The full template in `references/design-system.md` registers extra macros like `\degree`, `\d`, `\e`, `\bm` and a post-render error banner — copy that template verbatim.)
+Copy the `<head>` KaTeX block **verbatim** from `references/design-system.md` → **HTML Page Template** — it loads KaTeX, registers the macros (`\degree`, `\celsius`, `\d`, `\e`, `\bm`, …), and installs the post-render error banner. Do not hand-roll a shorter `renderMathInElement` call; the macros and banner are load-bearing.
 
 - Inline: `$...$` | Display: `$$...$$`
 - Vectors: `\vec{F}` (arrow notation), unit vectors: `\hat{n}`, differentials: `\mathrm{d}x`
@@ -491,3 +370,7 @@ python3 scripts/build_and_check.py check <file>.html
 ```
 
 It flags every `·`, `°`, `−`, `×` that lands inside a math span (and is macro-aware: a command your file registers as a macro is not reported, while the same command used without a definition still is). Treat a FAIL as blocking — never ship a file until the scan is clean.
+
+## Continuous improvement (when maintaining this skill)
+
+Living document: when a real run comes out wrong, shallow, or mis-triggered, log it in **`references/lessons-learned.md`** and close the loop (distilled rule → backed by a `build_and_check.py` check + `test_*` case if detectable, else an eval). The `triggering` block in `evals/evals.json` guards discovery — update it whenever you tune the description.

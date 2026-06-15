@@ -2,6 +2,14 @@
 
 How to turn homework problems into HTML — the always-visible problem + figure, the collapsible solution, and the figure decision (draw SVG vs. embed the original image). Read this together with `design-system.md`.
 
+## Contents
+
+1. **Reading problem images** — text / photo / PDF worksheet; transcribe exactly
+2. **The MODE C problem card** — 题号+题目 visible, `<details>` solution, `.answer-box`
+3. **Figure decision — SVG vs. embed original** — the core MODE C rule + checklist
+4. **Embedding the original figure (base64)** — crop from PDF / datauri / inline-at-end
+5. **MODE B — homework as a worked-example card** — problem lives inside the concept section
+
 ---
 
 ## 1. Reading problem images

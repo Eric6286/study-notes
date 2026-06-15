@@ -22,5 +22,23 @@
       "expected_output": "MODE C 全部题目解答：单个自包含 HTML。每题一张卡片，题号+完整题目文字+题目图(简单图内联 SVG、复杂/照片嵌原图)始终可见；解答放进可折叠 <details>，每一步都展示、最终结果放 answer-box，多问按(1)(2)(3)各自给答案。目录列『第1题/第2题/…』。每题盲解双算+核验清单(量纲/特殊情形/把答案代回/用代码重算)，两路一致才标『已核验 ✓』，解答末尾加一句 检验(tip callout)。数学全 KaTeX 零裸 Unicode。build_and_check.py PASS、check_features.py 10/10。",
       "files": []
     }
-  ]
+  ],
+  "triggering": {
+    "_comment": "Discovery tests — does the description fire on the right requests and stay quiet on the wrong ones? Run these by paraphrase: read only the SKILL.md description and judge whether this skill should load. No HTML is produced.",
+    "should_trigger": [
+      "帮我整理一份《线性代数》特征值与特征向量的复习笔记，期末要用",
+      "make me study notes on Maxwell's equations with derivations and worked examples",
+      "我上传了这章课本 PDF，帮我出一份学习笔记",
+      "这几道动量守恒的作业题，帮我把这一章重新讲一遍",
+      "把这几道高数题详细解答给我，我想对答案",
+      "help me learn the chain rule for an exam"
+    ],
+    "should_NOT_trigger": [
+      { "prompt": "帮我做一份东京 5 日游的行程", "route_to": "trip-planner" },
+      { "prompt": "把这份课件做成考点速查表 / cheat sheet", "route_to": "summarize-slides" },
+      { "prompt": "把这份调研资料整理成一份 HTML 报告", "route_to": "visual-report" },
+      { "prompt": "帮我写个快速排序的 Python 实现", "route_to": "none (plain coding task)" },
+      { "prompt": "把这个 PDF 合并/拆分一下", "route_to": "pdf skill" }
+    ]
+  }
 }

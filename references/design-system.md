@@ -2,6 +2,24 @@
 
 Complete CSS and HTML component library for study notes. Copy the CSS block verbatim into `<style>` tags.
 
+## Contents
+
+- **Full CSS** — the complete `:root` palette, dark-mode, layout, and every component class
+- **HTML Page Template** — head (KaTeX + macros + error banner), `.page`, header, TOC, nav JS
+- **Layout Consistency Rule (MANDATORY)** — the one-sub-section-per-card invariant
+- **Callout Quick Reference** — `.mistake` / `.exam` / `.tip` / `.note` variants
+- **Section Color Assignment Guide** — which `.sec-COLOR` for which kind of section
+- **Big Formula Usage** — `.big-formula` vs `.fbox`
+- **SVG Diagram Rules (CRITICAL)** — arrow size, proportions, label placement, Unicode-in-`<text>`
+- **Vector Notation in KaTeX** — `\vec` / `\hat`, when bold is OK
+- **KaTeX Pre-defined Macros** — `\degree` `\celsius` `\d` `\e` `\bm` … (always available)
+- **KaTeX Forbidden Commands** — what produces red error text
+- **Never use `\boxed{}` inside `.fbox`/`.big-formula`/`.callout`** — silent visual failure + recovery
+- **Self-test quiz widget** (optional) — CSS + HTML pattern + the one-copy JS
+- **Anki flashcard deck** (optional) — hidden `#anki-deck` format for `make_anki.py`
+- **Source citation tag `.src-ref`** — for source-grounded fidelity mode
+- **MODE A note components** — elective badge, figure reference, collapsible example/exercise card
+
 ---
 
 ## Full CSS
@@ -1166,3 +1184,83 @@ result.
 **Hard rule (honesty):** only ever write a page/equation number you actually have from
 the extracted source. If you did not read that page, omit the `.src-ref` — never invent a
 citation. A fabricated page number is worse than none.
+
+---
+
+## MODE A note components (elective badge · figure reference · example card)
+
+Three small components used by MODE A study notes. Add the CSS to the `<style>` block (it is
+part of the Full CSS contract, repeated here so MODE A has everything in one place).
+
+### Elective badge
+
+Sections/problems marked `*`, `★`, or 选学/选读 are **elective** — the student hasn't studied
+them. Skip them entirely unless they cross-reference core material or are commonly tested; if
+included, keep them to one short card, never at core depth, and tag every included item:
+
+```css
+.elective-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--amber-dark);
+  background: var(--amber-light);
+  border: 1px solid var(--amber);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+}
+```
+
+Usage: `<h3 id="sX-X">§X.X 节标题 <span class="elective-badge">★ 选学</span></h3>`.
+In the TOC, append ` ★` (plain text) after the title of any elective section link.
+
+### Figure reference (MODE A only)
+
+In MODE A do **not** draw SVG diagrams or embed base64 images unless the user explicitly asks —
+write an inline reference instead, using the book's exact figure number and caption:
+
+```html
+<p class="fig-ref">（见图 3-5：弹簧振子示意图）</p>
+```
+
+```css
+.fig-ref { color: var(--text3); font-size: 13px; font-style: italic;
+           padding: 4px 0 4px 12px; border-left: 3px solid var(--border); margin: 8px 0; }
+```
+
+Format: `（见图 X-X：图题）`. (MODE B/C are different — figures are mandatory there and either
+drawn as SVG or embedded from the original image; see `problem-solutions.md`.)
+
+### Collapsible example / exercise card
+
+**All 例题 and 练习答案/提示 MUST live inside `<details>` blocks — never inline.** The `<summary>`
+shows the problem number + title (always visible); the full statement, solution steps, answer,
+and hints go in `<div class="details-body">`. Omit the card entirely if a section has no
+examples. Chapter-end exercise answers: one `<details>` per exercise, grouped in a single card
+at the end of that chapter.
+
+```html
+<div class="card">
+  <h3>例题 &amp; 练习</h3>
+
+  <details>
+    <summary>例 3-2　弹簧振子的周期</summary>
+    <div class="details-body">
+      <p><strong>题目：</strong>质量为 $m$ 的物体挂在劲度系数为 $k$ 的弹簧上，求振动周期。</p>
+      <p><strong>解：</strong>由 $F = -kx$ 和牛顿第二定律…</p>
+      <div class="fbox">$$T = 2\pi\sqrt{\frac{m}{k}}$$</div>
+    </div>
+  </details>
+
+  <details>
+    <summary>练习 3-4　答案与提示</summary>
+    <div class="details-body">
+      <p><strong>答案：</strong>$T = 0.63\,\text{s}$</p>
+      <p><strong>提示：</strong>代入 $m = 0.1\,\text{kg}$，$k = 10\,\text{N/m}$。</p>
+    </div>
+  </details>
+</div>
+```
