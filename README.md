@@ -129,7 +129,8 @@ study-notes/
 ├── references/
 │   ├── design-system.md              # HTML 输出规范（CSS/JS 模板 + 全部组件 + KaTeX 规则）
 │   ├── workflow-orchestration.md     # plan→fan-out→verify→assemble + 盲解双算核验清单
-│   └── problem-solutions.md          # 作业题→HTML：题面/图/折叠解答、SVG vs 嵌原图
+│   ├── problem-solutions.md          # 作业题→HTML：题面/图/折叠解答、SVG vs 嵌原图
+│   └── lessons-learned.md            # 活体登记册：真实失败→根因→规则→对应检查→日期
 ├── scripts/
 │   ├── build_and_check.py            # 输出静态校验（裸 Unicode / div / $ / 禁用命令，宏感知）
 │   ├── test_build_and_check.py       # 校验器自身的回归测试（锁住宏感知修复）
