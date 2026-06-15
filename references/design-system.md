@@ -47,6 +47,17 @@ Complete CSS and HTML component library for study notes. Copy the CSS block verb
     --purple-light:#26215C; --teal-light:#04342C; --coral-light:#4A1B0C;
     --amber-light:#412402; --blue-light:#042C53; --green-light:#173404;
     --red-light:#501313; --pink-light:#4B1528;
+    /* CRITICAL dark-mode contrast fix. The block above only re-darkens the *-light
+       BACKGROUNDS; without the two lines below, the base accents and the *-dark TEXT
+       colours keep their light-mode (dark) values, so every "accent text on accent-light
+       background" pairing — badges (.b-teal), section headings (.sec-* h2), .flabel,
+       callout icons, graded .quiz-opt — becomes dark-on-dark and unreadable (old
+       teal-dark on teal-light measured 1.46:1). Brightening them restores 6.8–9.9:1.
+       *-mid are already bright; leave them untouched. */
+    --purple:#9A92E6; --teal:#3FB389; --coral:#E07B52; --amber:#E89A2A;
+    --blue:#5B9FE0; --green:#7FB23E; --red:#E07676; --pink:#D87B9C;
+    --purple-dark:#C7C2F5; --teal-dark:#74D6B0; --coral-dark:#F4A487; --amber-dark:#F2B75A;
+    --blue-dark:#92C2F0; --green-dark:#A6CF6B; --red-dark:#F2A6A6;
   }
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -56,12 +67,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 /* Safety net: if a div escapes .page due to a tag mismatch, body still constrains width */
 body>*:not(.page){max-width:900px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px;}
 .katex{font-size:1.06em;}
-/* KaTeX display formulas must NEVER have a scrollbar.
-   overflow:visible lets the formula render at its natural height and width.
-   The containing .fbox / .big-formula (also overflow:visible) expands to fit.
-   Do NOT set overflow-x:auto here — even a 1px overflow triggers a scrollbar
-   that intercepts page scroll and makes the formula "jump" independently. */
-.katex-display{margin:4px 0!important;overflow:visible;}
+/* ── Wide display-formula handling (revised) ──
+   A display formula wider than the text column must NOT spill past its box / the viewport.
+   That overflow happens at ANY width (a long equation overflows a 900px column too, not just
+   on a phone), so the fix must be width-independent: scroll the formula horizontally INSIDE
+   its own box at all widths. overflow-y:hidden is deliberate and load-bearing — it stops
+   .katex-display from becoming a *vertical* scroll container, so a mostly-vertical wheel /
+   trackpad gesture passes straight through to the page instead of being trapped on the formula
+   (the "jump" the earlier all-visible design was trying to avoid). The box auto-sizes to the
+   formula's natural height, so overflow-y:hidden never clips a tall \dfrac / \int / \sqrt /
+   matrix (verified by rendering). The chunky OS-native scrollbar is replaced by the thin,
+   theme-aware one defined just below. */
+.katex-display{margin:4px 0!important;overflow-x:auto;overflow-y:hidden;
+  overscroll-behavior-x:contain;padding:2px 0;-webkit-overflow-scrolling:touch;}
+/* Thin, theme-aware scrollbar for the only two things that scroll horizontally — wide
+   formulas and wide tables — instead of the jarring white OS default with stepper arrows.
+   It only appears when content actually overflows; formulas that fit show no bar. The thumb
+   is --text2 (not --text3): --text3 measured 2.7–3.0:1 on the box bg, just under WCAG 1.4.11's
+   3:1 for non-text UI; --text2 clears it at ~5.7:1 and reads as a clearer scroll affordance. */
+.katex-display,table{scrollbar-width:thin;scrollbar-color:var(--text2) transparent;}
+.katex-display::-webkit-scrollbar,table::-webkit-scrollbar{height:7px;}
+.katex-display::-webkit-scrollbar-track,table::-webkit-scrollbar-track{background:transparent;}
+.katex-display::-webkit-scrollbar-thumb,table::-webkit-scrollbar-thumb{background:var(--text2);border-radius:4px;}
+.katex-display:hover::-webkit-scrollbar-thumb,table:hover::-webkit-scrollbar-thumb{background:var(--text);}
+/* drop the chunky stepper-arrow buttons at the ends → a clean, minimal bar */
+.katex-display::-webkit-scrollbar-button,table::-webkit-scrollbar-button{display:none;width:0;height:0;}
+/* keyboard a11y: the JS below adds tabindex=0 to a formula/table ONLY when it actually
+   overflows, so a keyboard user can focus it and arrow-scroll. Show a focus ring for them. */
+.katex-display:focus-visible,table:focus-visible{outline:2px solid var(--blue-mid);outline-offset:2px;border-radius:4px;}
 
 /* ── Global width normalisation ──
    Every block component is width:100% and cannot overflow its container.
@@ -296,6 +329,27 @@ details[open] summary::before{transform:rotate(90deg);}
   text-transform:uppercase;letter-spacing:0.08em;
   padding:0 14px 5px;border-bottom:1px solid var(--border);margin-bottom:3px;
 }
+
+/* ── Universal overflow guard ──
+   Long inline math, URLs, or unbroken strings must wrap instead of pushing the page wide.
+   (KaTeX inline atoms still won't split mid-symbol, but this stops prose from overflowing.) */
+.card p,.card li,.callout-body p,.callout-body li,.example-body p,.details-body p,.step-body,
+.answer-box p,.fnote{overflow-wrap:break-word;}
+
+/* ── Mobile (≤600px) ──
+   Wide-formula overflow is already handled width-independently by .katex-display above; here
+   we only reclaim horizontal space (tighter padding) and shrink oversized headings/math so
+   long rows need less scrolling in the first place. */
+@media(max-width:600px){
+  body{font-size:14px;}
+  .page{padding:24px 14px 80px;}
+  .card{padding:18px 16px;}
+  .fbox{padding:14px 16px;}
+  .big-formula{padding:18px 12px;}
+  .katex{font-size:1em;}
+  .header h1{font-size:24px;}
+  .section h2{font-size:20px;}
+}
 ```
 
 ---
@@ -333,11 +387,15 @@ details[open] summary::before{transform:rotate(90deg);}
         /* \cdotp is NOT a KaTeX command — it renders as an error.
            Map it to \cdot (centre dot, correct for unit products like J·mol⁻¹) */
         '\\cdotp':   '{\\cdot}',
-        /* siunitx-style unit helpers (not KaTeX built-ins) */
-        '\\unit':    '{\\,\\text}',
+        /* siunitx-style unit helper (not a KaTeX built-in).
+           NO wrapping braces: the inner \text takes its argument from OUTSIDE the macro
+           (\unit{m/s}). '{\\,\\text}' would expand \unit{m/s} → {\,\text}{m/s}, leaving \text
+           with no argument → KaTeX "Extra }" parse error (silent until render). */
+        '\\unit':    '\\,\\text',
         '\\celsius': '{{{}^\\circ\\text{C}}}',
-        /* Bold vector alternative */
-        '\\bm':      '{\\boldsymbol}'
+        /* Bold vector alternative — bare alias, NOT '{\\boldsymbol}': \bm{F} must expand to
+           \boldsymbol{F}, not {\boldsymbol}{F} (the latter errors, same reason as \unit above). */
+        '\\bm':      '\\boldsymbol'
       }
     });
     /* Signal that KaTeX rendering is complete */
@@ -669,6 +727,32 @@ details[open] summary::before{transform:rotate(90deg);}
   });
 })();</script>
 
+<!-- ── Keyboard a11y for horizontally-scrollable content ──
+   A wide formula/table scrolls sideways, but a <div>/<table> isn't focusable, so a
+   keyboard-only user can't reach it. This standalone block (independent of the nav script
+   above, so it runs even if the nav is removed) tags ONLY elements that actually overflow as
+   focusable scroll regions, and re-checks on resize so tab order isn't cluttered with
+   formulas that fit. The :focus-visible ring is styled in the CSS. -->
+<script>
+(function(){
+  function tagScrollables(){
+    document.querySelectorAll('.katex-display, table').forEach(function(el){
+      var over = el.scrollWidth - el.clientWidth > 2;
+      if(over && el.tabIndex !== 0){
+        el.tabIndex = 0; el.setAttribute('role','region');
+        el.setAttribute('aria-label','可横向滚动'); el.dataset.scrollable = '1';
+      } else if(!over && el.dataset.scrollable){
+        el.removeAttribute('tabindex'); el.removeAttribute('role');
+        el.removeAttribute('aria-label'); delete el.dataset.scrollable;
+      }
+    });
+  }
+  window.addEventListener('katexdone', function(){ setTimeout(tagScrollables, 200); }, {once:true});
+  window.addEventListener('load', function(){ setTimeout(tagScrollables, 250); });
+  var stt; window.addEventListener('resize', function(){ clearTimeout(stt); stt = setTimeout(tagScrollables, 250); }, {passive:true});
+})();
+</script>
+
 </body>
 </html>
 ```
@@ -792,6 +876,36 @@ Key values:
 - **Arrow length should be proportional to what it represents.** A reaction force arrow and a weight arrow on the same diagram should be similar lengths unless magnitude difference is the point. Do not draw arrows that are longer than the objects they act on.
 - **Objects (boxes, shapes) must be visually larger than the arrows on them.** If the arrow is taller than the box it points to, shrink the arrow or enlarge the box.
 
+### Text contrast inside boxes & flowcharts (CRITICAL — readability)
+
+A recurring bug: a box (flowchart node, legend, callout drawn in SVG) is filled with a tint of
+an accent colour, and its **text is set to the same accent hue**, so the label is nearly
+invisible — worst in dark mode, where a saturated label on a same-hue tint can fall to ~1.5:1.
+
+**Rules — never put accent-coloured text on a same-hue fill:**
+
+- **Saturated/solid coloured fill** (e.g. `fill="#534AB7"`) → text must be **white / near-white**
+  (`fill="#fff"`), never the accent itself.
+- **Light/pale tint fill** → text must be a **dark** shade of the hue (or `var(--text)`), not the
+  mid/base accent. Aim for ≥ 4.5:1; check a borderline pair before shipping.
+- **One hue per box does double duty at most** — use the accent for the *border* and a
+  *neutral/contrasting* colour for the *text*; do not paint border, fill, and text the same hue.
+- **SVG `<text>` hardcoded colours do NOT follow dark mode.** A colour readable on the light page
+  background may vanish on the dark one (and vice-versa). Either pick a colour that clears 4.5:1
+  on **both** `#ffffff` and `#1e1e1c`, or drive fills from the CSS palette: give the `<svg>`
+  `color:var(--text)` and use `fill="currentColor"` for text, `stroke="currentColor"` for lines.
+- For **HTML** flowchart boxes (divs, not SVG), prefer the design-system vars — `background:var(--purple-light); color:var(--purple-dark)` — which are now dark-mode-safe after the contrast fix in the dark `:root`. Do **not** write `color:var(--purple)` text on a `var(--purple-light)` box.
+
+```svg
+<!-- ✗ wrong: teal text on a teal tint — invisible in dark mode -->
+<rect x="10" y="10" width="160" height="44" rx="8" fill="#04342C" stroke="#1D9E75"/>
+<text x="90" y="37" fill="#1D9E75" text-anchor="middle" font-size="13">求 约束反力</text>
+
+<!-- ✓ right: white text on a solid fill, OR currentColor that adapts -->
+<rect x="10" y="10" width="160" height="44" rx="8" fill="#0F6E56" stroke="#0F6E56"/>
+<text x="90" y="37" fill="#fff" text-anchor="middle" font-size="13">求 约束反力</text>
+```
+
 ### Label placement template for force diagrams
 
 ```svg
@@ -847,6 +961,7 @@ Common:       → ← ↑ ↓ ↗ ↘  ∝ ≈ ≠ ≤ ≥ ∞ ± × ÷ √ ∫ 
 - [ ] No label is hidden behind or on top of an arrow or shape
 - [ ] Object boxes/shapes are visually larger than the arrows on them
 - [ ] All text is ≥ 11px font-size
+- [ ] No box/flowchart text shares its fill's hue (white on solid fill, dark on pale tint; ≥4.5:1, checked in dark mode too)
 
 ---
 
