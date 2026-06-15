@@ -24,12 +24,17 @@ note/solution is wrong, ugly, or shallow on a real task, record it here as one r
 | 2026-06-13 | 旧产物里 `\text{J/(mol·K)}` 静默失败，浏览器不报错 | 裸 Unicode `·` 落进数学 span，KaTeX 默默吞掉 | "数学 span 内只用 ASCII+LaTeX，单位点乘写 `\cdot`" → SKILL.md *Units in KaTeX* | `build_and_check.py check_unicode_in_math` + `fix_math.py` 自动修 |
 | 2026-06-13 | `\boxed{}` 包高公式时渲染成空灰框盖住公式 | 容器已有可见框，再嵌 `\boxed` 触发 KaTeX 布局 bug，且不报错 | "禁止在 `.fbox`/`.big-formula`/`.callout` 里用 `\boxed{}`" → design-system.md | `build_and_check.py` grep `\boxed` + Check 3 |
 | 2026-06-13 | `\celsius`/`\unit` 被检查器误报为禁用命令 | 检查器不认识模板预注册的宏 | 让扫描 macro-aware：把当前文件注册的宏排除 | `test_build_and_check.py`（4 例锁定，7 个假阳性翻 PASS） |
-| 2026-06-13 | MODE B/C 偶发"题做错了" | 解一次就写、从不独立复核；心算多步 | "盲解双算 + 用 python/sympy 重算，两路一致才 `已核验 ✓`" → §0.5 + workflow-orchestration.md | evals 期望含"已核验 ✓"；尚无静态检查（人审） |
+| 2026-06-13 | MODE B/C 偶发"题做错了" | 解一次就写、从不独立复核；心算多步 | "盲解双算 + 用 python/sympy 重算，两路一致才 `已核验 ✓`" → §0.5 + workflow-orchestration.md | 已升级为静态门（见 2026-06-15「假已核验」行） |
+| 2026-06-15 | 公式/长文本在窄屏溢出；首版修复后又暴露两点：①滚动只在 ≤600px 触发、②滚动条是刺眼的系统白条带箭头 | `.katex-display:overflow:visible` 无处理；**首版只用 ≤600px 媒体查询门控**——但溢出取决于「公式宽 vs 容器宽」，与视口无关，700–900px 照样溢出；且没美化滚动条 | "改为**全宽生效**：`.katex-display{overflow-x:auto;overflow-y:hidden}`（y:hidden 既不裁高也不劫持竖向页面滚动）+ 主题细滚动条(thumb=`--text2`，过 WCAG 3:1，去掉 stepper 箭头)+ 仅给真正溢出的元素加 `tabindex` 让键盘可滚；prose 全局 `overflow-wrap`" → design-system.md | 真 KaTeX 渲染多断点(620/720/780)×暗亮实测 + WCAG 脚本核对比度 + 对抗式 CSS review |
+| 2026-06-15 | `\bm{F}`、`\unit{m/s}` 渲染成红色报错（KaTeX "Extra }"） | 模板宏 `'\bm':'{\boldsymbol}'`、`'\unit':'{\,\text}'` 用花括号包住「参数来自宏外部」的命令——`\bm{F}` 展开成 `{\boldsymbol}{F}`，`\boldsymbol` 拿不到参数。检查器对已注册宏跳过禁用扫描，静态查不到；仅运行时报错横幅能发现 | "去掉外层花括号、用裸别名：`'\bm':'\boldsymbol'`、`'\unit':'\,\text'`（katex.renderToString 实测两式均 OK）" → design-system.md 模板宏块 | `build_and_check.py check_broken_macros`（命中 `{\boldsymbol}`/`{\,\text}` 宏体即 FAIL）+ `test_*`（9/9）|
+| 2026-06-15 | 暗色模式下框内文字与底色撞色、几乎看不清 | 暗色 `:root` 只改了 `*-light` 背景，`*-dark` 文本与基础强调色仍是亮色值 → 暗底暗字（实测 teal-dark/teal-light 仅 1.46:1） | "暗色 root 同步覆盖基础强调色 + `*-dark`（实测回到 6.8–9.9:1）；图/流程图框文字禁与填充同色" → design-system.md 暗色 root + SVG 文字对比规则 | 对比度用 WCAG ratio 脚本核过（1.46→6.8+） |
+| 2026-06-15 | 二阶导算错、整题答案错，却仍标"已核验"（曲柄连杆题） | 心算微分 + 套用记忆中的"标准答案"，未对给定 x(t) 实算；"已核验"是装饰、无强制 | "已核验须凭证：每个 badge 旁留 `<!-- verify: -->` 记录独立复算；微分一律走 sympy；给定方程求导就对给定式求导" → SKILL.md Check 4 + §0.5 + workflow-orchestration.md 警示案例 | `build_and_check.py check_verified_badges`（badge 数 > verify 工件数则 FAIL）+ `test_build_and_check.py`（7/7） |
 
 ## Open watch-list (对标观察，下一轮从真实反馈进)
 
 - [ ] 触发边界：上传 PDF 时 `study-notes`(出完整笔记) vs `summarize-slides`(出考点速查) 是否被正确区分？
       —— 已在 `evals.json → triggering` 加负例，需在真实会话里复核命中率。
-- [ ] "已核验 ✓" 目前靠人审，没有静态检查能证明双算真的发生过。若出现"标了已核验仍算错"，
-      考虑加一条 eval 或要求把验算的 python 输出留在 `<details>` 里以便抽查。
+- [x] "已核验 ✓" 此前靠人审：已加静态门——每个 badge 必须配一条 `<!-- verify: -->` 工件，
+      否则 `build_and_check.py` FAIL（2026-06-15）。注意它是**计数门**（badge ≤ verify 工件），
+      不能证明工件内容属实，故对重要题仍保留"把 sympy 输出写进 verify 注释"的习惯以便抽查。
 - [ ] 大批量(≥8 题)并行子代理产物的一致性（同一套设计系统/图规则）——抽查拼接页有无风格漂移。

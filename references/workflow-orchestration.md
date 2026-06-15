@@ -111,7 +111,12 @@ For each problem:
    independent final answer.
 
 3. **Reconcile.**
-   - Solver and Verifier **agree** → ship the cleaner write-up, tag it `已核验 ✓`.
+   - Solver and Verifier **agree** → ship the cleaner write-up and tag it `已核验 ✓` — but the
+     badge is **earned, not decorative**. Record the independent check as an HTML comment next to
+     the answer: `<!-- verify: sympy diff(x,t,2)=l*w^2*(cos(wt)+lam*cos(2wt)), matches main solution -->`.
+     `build_and_check.py` **FAILs** any `已核验` that lacks a matching `<!-- verify: -->` artifact,
+     so **no recorded check → no badge**. A false `已核验` is worse than none (same honesty rule as
+     `.src-ref` citations).
    - They **disagree** → a reconciliation pass: locate the error (recompute the disputed step
      with code), re-derive, and only ship once two independent routes agree. **Never ship a
      problem whose two solves disagree.**
@@ -126,8 +131,8 @@ Same as MODE A Phase 2: full Content Structure per concept, pedagogical order, s
 Place each problem's **verified** solution as a collapsible worked-example card inside the
 section that teaches its concept (see `references/problem-solutions.md` §5). The solution should
 point back to the concept just taught ("用刚才 §2.3 的动量守恒"). Add a small `已核验 ✓` marker
-in the card so the student knows it was double-checked. Figures follow the figure rule (SVG for
-simple, embed original for complex/photo).
+in the card **only if** it carries its `<!-- verify: -->` artifact (the build check enforces the
+1:1 pairing). Figures follow the figure rule (SVG for simple, embed original for complex/photo).
 
 **Phase 5 — Self-test card + assemble.**
 End with the `本章习题自测` card (each 作业题 + one-line 考点 tag + link to its worked example).
@@ -139,7 +144,14 @@ Concatenate, run the coherence pass and post-generation checks, then `present_fi
 
 A problem's answer is not "done" until ALL applicable boxes pass:
 
+- [ ] **Calculus done with `sympy`, never by hand** — every derivative, integral, and Taylor/series
+      expansion is computed with code and the verified expression pasted in. Hand-differentiation
+      is the single most common source of a wrong-but-confident answer (see the cautionary case below).
+- [ ] **A problem that GIVES an equation and asks for its derivative** is solved by differentiating
+      the GIVEN expression with `sympy` — never by pasting a remembered "standard"/textbook result.
 - [ ] **Independent re-solve agrees** (blind double-solve; for important problems a third route).
+- [ ] **Verify artifact recorded** — the independent check is written as an `<!-- verify: ... -->`
+      HTML comment beside the answer, so `已核验` is auditable and `build_and_check.py` passes.
 - [ ] **Units / dimensions** are consistent on both sides of every equation and in the final answer.
 - [ ] **Limiting / special cases** behave sanely (set a mass→0, angle→0/90°, k→∞, etc.).
 - [ ] **Substitute the answer back** into the governing equation / original condition — it holds.
@@ -172,3 +184,24 @@ print('v=',v); print('dE=',dE)   # confirms the closed form before you write it 
 
 Paste the **verified** numbers/expressions into the HTML. This single habit removes the most
 common cause of wrong answers.
+
+### Cautionary case — the hand-differentiation trap (a real failure this gate exists to stop)
+
+A slider-crank problem **gave** the slider's motion
+$x = l\big[(1-\tfrac{\lambda^2}{4}) - \cos\omega t - \tfrac{\lambda}{4}\cos 2\omega t\big]$ and asked
+for $\ddot x$. The note printed $\ddot x = -r\omega^2(\cos\omega t + \lambda\cos 2\omega t)$ — a
+*remembered* textbook result — and stamped it `已核验`. But differentiating the **given** $x$ twice
+gives $\ddot x = +\,l\omega^2(\cos\omega t + \lambda\cos 2\omega t)$: **opposite sign**, and the
+coefficient is $l\omega^2 = r\omega^2/\lambda$, **not** $r\omega^2$. The whole answer was wrong yet
+looked verified — exactly the credibility leak this gate closes.
+
+Root cause: differentiation done in the head, and a "known answer" pasted instead of derived from
+the data given. The cure is mechanical — run it, don't recall it:
+
+```bash
+python3 -c "import sympy as sp; t,w,lam,l=sp.symbols('t omega lambda l',positive=True);
+x=l*((1-lam**2/4)-sp.cos(w*t)-(lam/4)*sp.cos(2*w*t)); print(sp.factor(sp.diff(x,t,2)))"
+# -> l*omega**2*(lambda*cos(2*omega*t) + cos(omega*t))
+```
+
+Put that exact output in the `<!-- verify: -->` comment; only then is the `已核验` badge earned.

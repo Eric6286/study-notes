@@ -14,6 +14,12 @@ Static checks (catch the SILENT failures KaTeX never reports):
                                                  \ket \bra \tensor ...)
   4. <div> balance                              (open vs close, +.page sanity)
   5. $ delimiter balance                        (stray unmatched $)
+  6. 已核验 badge <-> verify artifact           (every '已核验' must be backed by a
+                                                 '<!-- verify: ... -->' comment recording the
+                                                 independent re-solve; an unbacked badge FAILs)
+  7. Silently-broken KaTeX macro definitions    (\bm:'{\boldsymbol}' / \unit:'{\,\text}' —
+                                                 brace-wrapping a command whose arg comes from
+                                                 outside → "Extra }" render error)
 
 Exit code: 0 = clean, 1 = one or more FAIL-level problems.
 \boxed is reported as a WARNING (allowed only in plain prose), and does not by
@@ -96,6 +102,38 @@ def check_forbidden(html):
     return hits
 
 
+# A verified-answer badge ("已核验", optionally "已核验 ✓") and the machine-checkable
+# artifact that must back it: an HTML comment recording the independent re-solve, e.g.
+#   <!-- verify: sympy diff(x,t,2)=l*w^2*(cos(wt)+lam*cos(2wt)), matches main solution -->
+# This turns the badge from decoration into something EARNED and auditable — the root cause
+# of "wrong answer still stamped 已核验". Authoring rule: one verify-comment per badge.
+VERIFY_BADGE_RE = re.compile(r"已核验")
+VERIFY_NOTE_RE = re.compile(r"<!--\s*verify:", re.IGNORECASE)
+
+
+def check_verified_badges(html):
+    """Return (n_badges, n_verify_notes). A file is non-compliant when it stamps more
+    '已核验' badges than it records '<!-- verify: -->' artifacts — i.e. it claims
+    verification it never wrote down."""
+    return len(VERIFY_BADGE_RE.findall(html)), len(VERIFY_NOTE_RE.findall(html))
+
+
+# Silently-broken KaTeX macro DEFINITIONS: a brace group wrapping a command whose argument is
+# supplied from OUTSIDE the macro, e.g.  '\bm':'{\boldsymbol}'  or  '\unit':'{\,\text}'.
+# Then \bm{F} expands to {\boldsymbol}{F} -> \boldsymbol gets no argument -> KaTeX "Extra }"
+# render error. No .katex-error is in the STATIC html (it only appears at render), and the macro
+# is "registered" so check_forbidden skips it — so without this guard the bug ships silently.
+# The fix is the bare alias (no wrapping braces). In the HTML each LaTeX backslash is JS-doubled.
+# Match only in VALUE position (   : '{...}'   ) so prose/comments that merely MENTION the broken
+# form (e.g. a "NOT '{\boldsymbol}'" warning) are not false-flagged.
+BROKEN_MACRO_RE = re.compile(r""":\s*(['"])\{\\\\(?:boldsymbol|,\\\\text)\}\1""")
+
+
+def check_broken_macros(html):
+    """Lines where a macro body brace-wraps an argument-taking command (\\bm / \\unit pattern)."""
+    return [line_of(html, m.start()) for m in BROKEN_MACRO_RE.finditer(html)]
+
+
 def check_div_balance(html):
     opens = len(re.findall(r"<div\b", html))
     closes = len(re.findall(r"</div\s*>", html))
@@ -142,6 +180,18 @@ def run_checks(path):
     else:
         print("[ok]  no forbidden KaTeX commands")
 
+    bm = check_broken_macros(html)
+    if bm:
+        fails += 1
+        print(f"\n[FAIL] {len(bm)} silently-broken macro definition(s) at line(s) "
+              f"{', '.join(map(str, bm[:20]))}:")
+        print(r"       a macro body like '{\boldsymbol}' / '{\,\text}' brace-wraps a command")
+        print(r"       whose argument comes from outside (\bm{F} -> {\boldsymbol}{F}), which")
+        print(r'       renders as a KaTeX "Extra }" error. Use the bare alias: \bm -> \boldsymbol,')
+        print(r"       \unit -> \,\text (no wrapping braces).")
+    else:
+        print("[ok]  no silently-broken macro definitions")
+
     opens, closes, page_open = check_div_balance(html)
     if opens != closes:
         fails += 1
@@ -159,6 +209,21 @@ def run_checks(path):
               "(likely an unbalanced delimiter — check for $ ... missing closing $)")
     else:
         print("[ok]  $ delimiters balanced")
+
+    badges, notes = check_verified_badges(html)
+    if badges and notes < badges:
+        fails += 1
+        print(f"\n[FAIL] {badges} '已核验' badge(s) but only {notes} '<!-- verify: -->' "
+              "artifact(s).")
+        print("       Every verified answer must record its INDEPENDENT re-solve as an HTML")
+        print("       comment next to the answer, e.g.")
+        print("         <!-- verify: sympy diff(x,t,2)=l*w^2*(cos(wt)+lam*cos(2wt)), matches -->")
+        print("       Either add the missing check(s) (do derivatives/algebra with sympy, not by")
+        print("       hand) or remove the unearned badge. A false 已核验 is worse than none.")
+    elif badges:
+        print(f"[ok]  {badges} '已核验' badge(s), each backed by a verify artifact")
+    else:
+        print("[ok]  no '已核验' badges (none required)")
 
     boxed = check_boxed(html)
     if boxed:
