@@ -15,6 +15,7 @@
         {left:'$',  right:'$',  display:false}
       ],
       throwOnError: false,
+      output: 'html',
       macros: {
         '\\d':  '{\\mathrm{d}}',
         '\\e':  '{\\mathrm{e}}'
@@ -100,6 +101,10 @@ table{overflow-x:auto;display:block;}
 .section-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;}
 .section h2{font-size:23px;font-weight:700;}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:22px 26px;margin-bottom:16px;}
+/* Perf on huge notes: content-visibility:auto skips layout+paint of off-screen blocks so
+   opening a <details> no longer re-lays-out/repaints the whole tall page (multi-second jank).
+   'auto' caches the real off-screen height once seen; scroll position is approximate until then. */
+.card,.example-block{content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .card h3{font-size:17px;font-weight:700;margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 .card h4{font-size:14px;font-weight:700;margin:20px 0 8px;padding-left:10px;
   border-left:3px solid var(--border);color:var(--text);line-height:1.4;}
@@ -189,6 +194,9 @@ details[open] summary::before{transform:rotate(90deg);}
 .b-blue{background:var(--blue-light);color:var(--blue-dark);}
 .b-green{background:var(--green-light);color:var(--green-dark);}
 .b-red{background:var(--red-light);color:var(--red-dark);}
+/* Verification badges (boxed): green=已核验 (x-verify passed), amber=未自动核验 (abstain, not red — not 'wrong'). */
+.b-verified{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green);font-weight:700;}
+.b-unverified{background:var(--amber-light);color:var(--amber-dark);border:1px solid var(--amber);}
 .answer-box{background:var(--green-light);border:1.5px solid rgba(59,109,17,0.25);border-radius:8px;padding:12px 16px;margin-top:10px;}
 .answer-box p{font-size:14px;margin:0;}
 /* ── extra helpers for exam questions ── */
@@ -1041,14 +1049,19 @@ details[open] summary::before{transform:rotate(90deg);}
   var SK = 'sp:' + location.pathname;
   function doRestore(y, tries){
     if(tries <= 0) return;
-    if(document.body.scrollHeight >= y + window.innerHeight * 0.5){
-      if(location.hash) history.replaceState(null, '', location.pathname + location.search);
-      window.scrollTo({top: y, behavior:'instant'});
-    } else { setTimeout(function(){ doRestore(y, tries - 1); }, 120); }
+    var prev = window.scrollY;
+    window.scrollTo({top: y, behavior:'instant'});
+    /* content-visibility:auto keeps page height estimated until scrolled into; each scrollTo renders
+       more (height grows), so retry next frame until we reach y or stop progressing (clamped at end). */
+    if(Math.abs(window.scrollY - y) > 4 && window.scrollY !== prev)
+      requestAnimationFrame(function(){ doRestore(y, tries - 1); });
   }
   function tryRestore(){
     var raw = localStorage.getItem(SK);
-    if(raw !== null && +raw > 0) doRestore(+raw, 20);
+    if(raw !== null && +raw > 0){
+      if(location.hash) history.replaceState(null, '', location.pathname + location.search);
+      doRestore(+raw, 60);
+    }
   }
   if(window.__katexDone) tryRestore();
   else window.addEventListener('katexdone', tryRestore, {once:true});

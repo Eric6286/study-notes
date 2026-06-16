@@ -16,6 +16,7 @@
         {left:'$',  right:'$',  display:false}
       ],
       throwOnError: false,
+      output: 'html',
       macros: {
         '\\dj':      '{\\text{đ}}',
         '\\degree':  '{{}^\\circ}',
@@ -108,6 +109,10 @@ table{overflow-x:auto;display:block;}
 .section-num{min-width:36px;height:36px;padding:0 6px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
 .section h2{font-size:23px;font-weight:700;}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:22px 26px;margin-bottom:16px;}
+/* Perf on huge notes: content-visibility:auto skips layout+paint of off-screen blocks so
+   opening a <details> no longer re-lays-out/repaints the whole tall page (multi-second jank).
+   'auto' caches the real off-screen height once seen; scroll position is approximate until then. */
+.card,.example-block{content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .card h3{font-size:17px;font-weight:700;margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 .card h4{font-size:14px;font-weight:700;margin:20px 0 8px;padding-left:10px;
   border-left:3px solid var(--border);color:var(--text);line-height:1.4;}
@@ -197,6 +202,9 @@ details[open] summary::before{transform:rotate(90deg);}
 .b-blue{background:var(--blue-light);color:var(--blue-dark);}
 .b-green{background:var(--green-light);color:var(--green-dark);}
 .b-red{background:var(--red-light);color:var(--red-dark);}
+/* Verification badges (boxed): green=已核验 (x-verify passed), amber=未自动核验 (abstain, not red — not 'wrong'). */
+.b-verified{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green);font-weight:700;}
+.b-unverified{background:var(--amber-light);color:var(--amber-dark);border:1px solid var(--amber);}
 .example-block{border:1px solid var(--border);border-radius:9px;overflow:visible;margin:14px 0;
   height:auto !important;max-height:none !important;}
 .example-header{background:var(--bg3);padding:10px 18px;font-size:13px;font-weight:700;line-height:1.7;
@@ -370,7 +378,7 @@ details[open] summary::before{transform:rotate(90deg);}
 
   <!-- 题1 -->
   <div class="card">
-    <h3 id="q1">题 1　球面在圆柱面内部的面积 <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q1">题 1　球面在圆柱面内部的面积 <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题1 球面在柱内面积">
 a = sp.symbols('a', positive=True)
 rho, th = sp.symbols('rho theta', positive=True)
@@ -416,7 +424,7 @@ check_equal(S, 2*a**2*(sp.pi - 2), name="题1 S=2a^2(pi-2)")
 
   <!-- 题3 -->
   <div class="card">
-    <h3 id="q3">题 3　两直交圆柱面所围立体的表面积 <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q3">题 3　两直交圆柱面所围立体的表面积 <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题3 牟合方盖表面积">
 R, x, y = sp.symbols('R x y', positive=True)
 # 一片柱面 (z>0) 落在另一柱体内的面积：投影到 x^2+y^2<=R^2
@@ -459,7 +467,7 @@ check_equal(4*A1, 16*R**2, name="题3 总表面积 S=16R^2 (×2上下 ×2两柱)
 
   <!-- 题4 -->
   <div class="card">
-    <h3 id="q4">题 4　球面内部最大球冠面积 <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q4">题 4　球面内部最大球冠面积 <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题4 球冠最大面积">
 R, r = sp.symbols('R r', positive=True)
 h = r - r**2/(2*R)            # 球冠高（由两球面相减得交线平面）
@@ -526,7 +534,7 @@ check_equal(S.subs(r, rmax), sp.Rational(32,27)*sp.pi*R**2, name="题4 Smax=32pi
 
   <!-- 题5(1) -->
   <div class="card">
-    <h3 id="q5_1">题 5(1)　抛物线弓形的质心 <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q5_1">题 5(1)　抛物线弓形的质心 <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题5(1) 抛物弓形质心">
 p, x0, x = sp.symbols('p x0 x', positive=True)
 A  = sp.integrate(sp.sqrt(2*p*x), (x, 0, x0))
@@ -572,7 +580,7 @@ check_equal(yb, sp.Rational(3,8)*sp.sqrt(2*p*x0), name="题5(1) ybar=3/8 sqrt(2 
 
   <!-- 题5(3) -->
   <div class="card">
-    <h3 id="q5_3">题 5(3)　两圆之间区域的质心 <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q5_3">题 5(3)　两圆之间区域的质心 <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题5(3) 两圆间质心">
 a, b = sp.symbols('a b', positive=True)
 rho, th = sp.symbols('rho theta')
@@ -635,7 +643,7 @@ check_equal(xb, (a**2 + a*b + b**2)/(2*(a + b)), name="题5(3) xbar")
 
   <!-- 题10(1) -->
   <div class="card">
-    <h3 id="q10_1">题 10(1)　椭圆盘的 $I_y$ <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q10_1">题 10(1)　椭圆盘的 $I_y$ <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题10(1) 椭圆盘 Iy">
 a, b = sp.symbols('a b', positive=True)
 rho, th = sp.symbols('rho theta', positive=True)
@@ -656,7 +664,7 @@ check_equal(Iy, sp.pi*a**3*b/4, name="题10(1) Iy=pi a^3 b/4")
 
   <!-- 题10(2) -->
   <div class="card">
-    <h3 id="q10_2">题 10(2)　抛物线弓形的 $I_x,\,I_y$ <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q10_2">题 10(2)　抛物线弓形的 $I_x,\,I_y$ <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题10(2) 抛物弓形 Ix Iy">
 x, y = sp.symbols('x y')
 Ix = sp.integrate(y**2*(2 - 2*y**2/9), (y, -3, 3))
@@ -682,7 +690,7 @@ check_equal(Iy, sp.Rational(96,7), name="题10(2) Iy=96/7")
 
   <!-- 题10(3) -->
   <div class="card">
-    <h3 id="q10_3">题 10(3)　矩形的 $I_x,\,I_y$ <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q10_3">题 10(3)　矩形的 $I_x,\,I_y$ <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题10(3) 矩形 Ix Iy">
 a, b, x, y = sp.symbols('a b x y', positive=True)
 Ix = sp.integrate(sp.integrate(y**2, (y, 0, b)), (x, 0, a))
@@ -716,7 +724,7 @@ check_equal(Iy, a**3*b/3, name="题10(3) Iy=a^3 b/3")
   </div>
 
   <div class="card">
-    <h3 id="q14">题 14　半圆环薄片对质点的引力 <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="q14">题 14　半圆环薄片对质点的引力 <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题14 半圆环引力">
 R1, R2, a, rho = sp.symbols('R1 R2 a rho', positive=True)
 G, mu = sp.symbols('G mu', positive=True)
@@ -991,7 +999,7 @@ check_equal(Fz, Fz_claim, name="题14 Fz")
 
   <!-- 题1(1) -->
   <div class="card">
-    <h3 id="p1_1">题 1(1) <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="p1_1">题 1(1) <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题1(1) 含参积分极限">
 x, y = sp.symbols('x y', real=True)
 Phi = sp.integrate(1/(1 + x**2 + y**2), (y, x, 1 + x))
@@ -1018,7 +1026,7 @@ check_limit(Phi, x, 0, sp.pi/4, name="题1(1) lim=pi/4")
 
   <!-- 题1(3) -->
   <div class="card">
-    <h3 id="p1_3">题 1(3) <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="p1_3">题 1(3) <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题1(3) 含参积分极限">
 x, y = sp.symbols('x y', real=True)
 Phi = sp.integrate(y**2*sp.cos(x*y), (y, 0, 2))
@@ -1062,7 +1070,7 @@ check_limit(Phi, x, 0, sp.Rational(8,3), name="题1(3) lim=8/3")
 
   <!-- 题2(2) -->
   <div class="card">
-    <h3 id="p2_2">题 2(2) <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="p2_2">题 2(2) <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题2(2) 莱布尼茨求导">
 x, y = sp.symbols('x y', positive=True)
 f = sp.log(1 + x*y)/y
@@ -1097,7 +1105,7 @@ check_equal(phi_p, 2*sp.log(1 + x**2)/x, name="题2(2) phi'=2ln(1+x^2)/x")
 
   <!-- 题2(4) -->
   <div class="card">
-    <h3 id="p2_4">题 2(4) <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="p2_4">题 2(4) <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题2(4) 莱布尼茨求导">
 x, y = sp.symbols('x y', positive=True)
 f = sp.exp(-x*y**2)
@@ -1153,7 +1161,7 @@ check_equal(sp.diff(f, x), -y**2*sp.exp(-x*y**2), name="题2(4) 内部被积=-y^
 
   <!-- 题4(1) -->
   <div class="card">
-    <h3 id="p4_1">题 4(1) <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="p4_1">题 4(1) <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题4(1) 对参数微分法">
 a, x = sp.symbols('a x', positive=True)
 g = sp.log((1 + a*sp.cos(x))/(1 - a*sp.cos(x)))/sp.cos(x)
@@ -1196,7 +1204,7 @@ check_equal(ans.subs(a, 0), 0, name="题4(1) I(0)=0")
 
   <!-- 题4(2) -->
   <div class="card">
-    <h3 id="p4_2">题 4(2) <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="p4_2">题 4(2) <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题4(2) 对参数微分法">
 a, x = sp.symbols('a x', positive=True)
 F = sp.log(sp.cos(x)**2 + a**2*sp.sin(x)**2)
@@ -1257,7 +1265,7 @@ check_equal(ans.subs(a, 1), 0, name="题4(2) I(1)=0")
 
   <!-- 题5(1) -->
   <div class="card">
-    <h3 id="p5_1">题 5(1) <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="p5_1">题 5(1) <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题5(1) 综合 费曼">
 a, th = sp.symbols('a theta', positive=True)
 t = sp.symbols('t', positive=True)
@@ -1298,7 +1306,7 @@ check_equal(I1, sp.pi/2*sp.log(1 + sp.sqrt(2)), name="题5(1) I(1)=pi/2 ln(1+sqr
 
   <!-- 题5(2) -->
   <div class="card">
-    <h3 id="p5_2">题 5(2) <span class="badge b-green" style="font-weight:700;">已核验 ✓</span></h3>
+    <h3 id="p5_2">题 5(2) <span class="badge b-verified">已核验 ✓</span></h3>
     <script type="text/x-verify" data-for="题5(2) 综合 换序">
 a, b, x, y, t, s = sp.symbols('a b x y t s', positive=True)
 # 技巧A：怪因子 (x^b-x^a)/ln x 还原成参数积分
@@ -1371,14 +1379,19 @@ check_equal(I, sp.atan(b + 1) - sp.atan(a + 1), name="题5(2) I=atan(b+1)-atan(a
   var SK = 'sp:' + location.pathname;
   function doRestore(y, tries){
     if(tries <= 0) return;
-    if(document.body.scrollHeight >= y + window.innerHeight * 0.5){
-      if(location.hash) history.replaceState(null, '', location.pathname + location.search);
-      window.scrollTo({top: y, behavior:'instant'});
-    } else { setTimeout(function(){ doRestore(y, tries - 1); }, 120); }
+    var prev = window.scrollY;
+    window.scrollTo({top: y, behavior:'instant'});
+    /* content-visibility:auto keeps page height estimated until scrolled into; each scrollTo renders
+       more (height grows), so retry next frame until we reach y or stop progressing (clamped at end). */
+    if(Math.abs(window.scrollY - y) > 4 && window.scrollY !== prev)
+      requestAnimationFrame(function(){ doRestore(y, tries - 1); });
   }
   function tryRestore(){
     var raw = localStorage.getItem(SK);
-    if(raw !== null && +raw > 0) doRestore(+raw, 20);
+    if(raw !== null && +raw > 0){
+      if(location.hash) history.replaceState(null, '', location.pathname + location.search);
+      doRestore(+raw, 60);
+    }
   }
   if(window.__katexDone) tryRestore();
   else window.addEventListener('katexdone', tryRestore, {once:true});
