@@ -71,10 +71,17 @@ checks it, and does arithmetic in its head. The workflow cures both:
   **gives** an equation and asks for its derivative, differentiate the **given** expression with
   `sympy` rather than recalling a "standard" textbook answer — pasting a remembered result is the
   classic source of a wrong-but-confident solution (cautionary case in `references/workflow-orchestration.md`).
-- **Earn the `已核验 ✓` badge.** Stamp it only when the blind re-solve agreed **and** you recorded
-  the check as a `<!-- verify: ... -->` HTML comment beside the answer. `build_and_check.py` FAILs
-  any `已核验` without that artifact, so no recorded check → no badge; a false `已核验` is worse
-  than none (same honesty rule as `.src-ref` citations).
+- **Earn the `已核验 ✓` badge by EXECUTION, not assertion.** A SKILL.md instruction to "verify"
+  is itself text the model can fake — so the badge is decided by a script, not by you. For every
+  machine-verifiable problem, add an invisible `<script type="text/x-verify">` block that
+  **recomputes the answer from the GIVEN data with sympy and asserts it equals the printed answer**
+  (helpers: `check_derivative` / `check_integral` / `check_equal` / `check_consistent` /
+  `check_limit` / `check_numeric`). Then run `python scripts/verify_solutions.py <file>.html`: it
+  executes every block and **only a PASSING block may carry `已核验`**. If a check fails → the
+  answer is wrong, fix it; if a problem has no clean symbolic check (proof, 讨论题) → tag
+  `未自动核验` (abstain), **never** `已核验`. A false `已核验` is worse than none (same honesty rule
+  as `.src-ref`). Full convention: `references/design-system.md` → "已核验 verification — the
+  EXECUTABLE gate". **Never pass the claimed answer in as the recomputation** — that defeats the gate.
 - **Ground in the source.** If a chapter PDF/notes are given, the method must match what the
   chapter teaches; cite formula numbers.
 
@@ -154,14 +161,14 @@ this is the fix for "MODE B 有时候题都做不对".
 **B2 — Solve + VERIFY every problem (do this BEFORE writing the notes; one unit per problem).** This is the key step. For each problem:
 - **Solve** the full step-by-step solution using the method the chapter teaches; do every non-trivial number with `python3` and every non-trivial symbolic step with `sympy` (don't do mental math).
 - **Verify blind**: independently re-solve from ONLY the problem statement, then run the **verification checklist** (units, limiting cases, substitute the answer back, recompute with code, method matches source, state assumptions).
-- **Reconcile**: if the two independent answers agree → record the check as a `<!-- verify: ... -->` comment beside the answer and tag `已核验 ✓` (the build check FAILs a badge with no artifact); if they disagree → find the error, re-derive, and **do not ship until two routes agree.**
+- **Reconcile**: if the two independent answers agree → encode the check as a `<script type="text/x-verify">` block (recompute from the **given** data, assert it equals the printed answer) and run `verify_solutions.py`; only a PASSING block earns `已核验 ✓`. If they disagree, or no clean symbolic check exists → fix it or tag `未自动核验`; **never ship a disagreeing/unchecked answer as 已核验.**
 - Carry the verified solutions forward into B4. (For ≥6 independent problems, run this phase as a dynamic workflow / parallel subagents — one per problem.)
 
 **B3 — Generate notes (fan-out, one unit per concept)** using the full **Content Structure** (intuition → rigorous statement → derivation → special cases → worked examples → common mistakes → connections → exam tips). Order sections pedagogically (prerequisite → core → harder), not in the order the problems happened to be given. Each unit gets the shared spec.
 
 **B4 — Weave the VERIFIED homework solutions in as worked examples.** For EACH homework problem, place a worked-example card in the section that teaches its concept:
 - `<summary>` names it, e.g. `作业 3　两物体完全非弹性碰撞求末速度` — always visible.
-- The full statement, every solution step, and the final answer (`.answer-box`) go inside a collapsible `<details>`; add a small `已核验 ✓` marker **with its `<!-- verify: ... -->` artifact** so the student knows it was double-checked (and the build check passes).
+- The full statement, every solution step, and the final answer (`.answer-box`) go inside a collapsible `<details>`; add a small `已核验 ✓` marker **only if its `<script type="text/x-verify">` block passes `verify_solutions.py`** (otherwise `未自动核验`).
 - The solution should point back to the concept just taught ("用刚才 §2.3 的动量守恒").
 - If the problem has a figure, follow the **MODE C figure rule** (SVG for simple, embed original image for complex/photo — see `references/problem-solutions.md`).
 - This is what turns homework into a learning tool: the student reads the concept, then opens the matching problem to see the concept applied.
@@ -185,7 +192,7 @@ this is the fix for "MODE B 有时候题都做不对".
    - **Complex** figure, OR the problem **already comes with an image/photo/graph/circuit/scanned diagram** → **DO NOT redraw it.** Crop the original figure from the upload and **embed it as a base64 `<img>`**. Use `scripts/extract_pdf.py crop ...` to cut the figure region out of a PDF page, or `scripts/embed_images.py datauri <png>` to turn any image file into an inline data-URI. The HTML must stay a single standalone file, so all images are base64-inlined (never external `src` paths).
    - Decision checklist for "simple vs complex" is in `references/problem-solutions.md`.
 
-3. **Answers must be correct — verify every one.** Run the **blind double-solve + verification checklist** in `references/workflow-orchestration.md` for each problem: solve, then independently re-solve from the statement alone; do every non-trivial number with `python3` / `sympy` (no mental math); dimensional/units check, limiting cases, substitute the answer back, order-of-magnitude plausibility; state assumptions when ambiguous. If the two solves disagree, reconcile before shipping. Don't hand-wave a step the student would get stuck on. Tag a solution `已核验 ✓` **only when** its independent re-solve agreed and you recorded the check as a `<!-- verify: ... -->` comment beside the answer — `build_and_check.py` FAILs an unbacked badge, and a false `已核验` is worse than none. For ≥6 independent problems, run this as a dynamic workflow / parallel subagents (one per problem).
+3. **Answers must be correct — verify every one.** Run the **blind double-solve + verification checklist** in `references/workflow-orchestration.md` for each problem: solve, then independently re-solve from the statement alone; do every non-trivial number with `python3` / `sympy` (no mental math); dimensional/units check, limiting cases, substitute the answer back, order-of-magnitude plausibility; state assumptions when ambiguous. If the two solves disagree, reconcile before shipping. Don't hand-wave a step the student would get stuck on. Tag a solution `已核验 ✓` **only after** its `<script type="text/x-verify">` block PASSES `python scripts/verify_solutions.py <file>.html` (the script recomputes from the given data with sympy and compares); a problem with no clean machine-checkable form is tagged `未自动核验`, never `已核验`. A false `已核验` is worse than none. For ≥6 independent problems, run this as a dynamic workflow / parallel subagents (one per problem).
 
 4. **Layout** reuses the design system: each problem = a `.card` containing an `.example-block`; the figure (SVG or `<img>`) sits **above** the `<details>` solution. Cycle section colors by problem group or leave a single accent.
 
@@ -203,7 +210,7 @@ If there are many problems (≈8+) or they are independent of each other, you ma
 2. **Read** `references/design-system.md` before writing any code. For MODE A & MODE B also read `references/workflow-orchestration.md` (the plan→fan-out→verify→assemble workflow). For MODE C / any solutions also read `references/problem-solutions.md`.
 3. **Read inputs**: PDF (Step 0 / `scripts/extract_pdf.py`) and/or problem images.
 4. **Plan → fan-out → verify**: build the TOC + shared spec once, generate one unit per section/problem, and **verify every answer** (blind double-solve + checklist, compute with code) — see §0.5. Write HTML in part files.
-5. **Build + check**: run `scripts/build_and_check.py build <part1> <part2> ... -o <output.html>` to concatenate and run the static checks, then run the four post-generation checks below and the coherence pass. Fix and re-run until clean.
+5. **Build + check**: run `scripts/build_and_check.py build <part1> <part2> ... -o <output.html>` to concatenate and run the static checks, then run `scripts/verify_solutions.py <output.html>` to **execute** every verification block, then the five post-generation checks below and the coherence pass. Fix and re-run until clean.
 6. **Output** to `<outdir>/<name>.html` and call `present_files`.
 
 ## Content Structure
@@ -305,7 +312,7 @@ way NotebookLM grounds answers in citations.
 
 ## Post-generation Formula Check (MANDATORY before presenting)
 
-Run `scripts/build_and_check.py` first (it automates Checks 2 & 3 plus div-balance, forbidden-command, and the Check 4 verified-badge scan on the static file). Then run all four checks below. Only present the file when all pass.
+Run `scripts/build_and_check.py` first (static lint: Checks 2 & 3 plus div-balance, forbidden-command, and the Check 4 verified-badge scan). Then run `scripts/verify_solutions.py` (Check 5 — it **executes** the verification blocks). Run all five checks below; only present the file when all pass.
 
 ### Check 1: KaTeX error spans (runtime)
 
@@ -370,6 +377,24 @@ but didn't write it down → **add the `<!-- verify: -->` comment** carrying the
 Do all differentiation/integration with `sympy`, never by hand — hand-differentiation is the
 documented cause of the "wrong answer, still 已核验" failure (e.g. a given $x(t)$ whose printed
 $\ddot x$ had the wrong sign and coefficient yet was stamped verified).
+
+### Check 5: `verify_solutions.py` — EXECUTE the verification (CRITICAL — the real gate)
+
+Check 4 only confirms a verify artifact *exists*; it can't prove it is *true* — a confidently-wrong
+model can still write a plausible-looking note. Check 5 crosses that trust boundary by **running**
+the checks:
+
+```bash
+python3 scripts/verify_solutions.py <file>.html
+```
+
+It extracts every `<script type="text/x-verify">` block, executes it (real sympy recomputes the
+answer from the **given** data and compares to the printed answer), and **gates the badge**: a
+solution may keep `已核验` only if its block PASSES; a block whose recomputation disagrees FAILs the
+run (and prints the real value vs. the claimed one); a `已核验` with no passing block FAILs. Fix the
+solution or downgrade it to `未自动核验` until this is clean. This is the check that actually catches
+"自信地标了已核验却算错". Full convention: `references/design-system.md` → "已核验 verification — the
+EXECUTABLE gate".
 
 Re-run all checks after fixing.
 

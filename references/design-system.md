@@ -267,6 +267,8 @@ details[open] summary::before{transform:rotate(90deg);}
 .b-blue{background:var(--blue-light);color:var(--blue-dark);}
 .b-green{background:var(--green-light);color:var(--green-dark);}
 .b-red{background:var(--red-light);color:var(--red-dark);}
+/* abstention badge — 未自动核验：muted dashed pill, used when a solution cannot be machine-verified */
+.b-unverified{background:var(--bg3);color:var(--text2);border:1px dashed var(--border);}
 
 /* Example blocks — no fixed height, no max-height, no writing-mode.
    The header is a horizontal strip at the top; content expands to fit.
@@ -1379,3 +1381,69 @@ at the end of that chapter.
   </details>
 </div>
 ```
+
+---
+
+## 已核验 verification — the EXECUTABLE gate (MODE B & MODE C)
+
+A `已核验 ✓` badge is a **claim that an independent check passed**. The only way to make that
+claim trustworthy is to let a machine, not the model, decide it — otherwise a confidently-wrong
+solution self-certifies (the documented slider-crank failure: a remembered textbook answer was
+stamped 已核验 while the real derivative of the *given* $x(t)$ disagreed in sign and coefficient).
+
+So the badge is **earned by execution**, not asserted. Every machine-verifiable solution carries an
+invisible `<script type="text/x-verify">` block that **recomputes the answer from the GIVEN data
+with sympy and asserts it equals the printed answer**. `scripts/verify_solutions.py` runs every
+block for real and gates the badge:
+
+- a block whose recomputation ≠ the claimed answer → **FAIL** (it prints the real recomputed value);
+- `已核验` is allowed **only** on a solution with a PASSING block; more badges than passing checks → FAIL;
+- anything not machine-verifiable (a proof, a conceptual answer) is tagged **`未自动核验`** (abstain), **never** `已核验`.
+
+### The x-verify block (invisible; executed by `verify_solutions.py`)
+
+```html
+<div class="card">
+  <h3>例 1　曲柄连杆求滑块加速度 <span class="badge b-green">已核验 ✓</span></h3>
+  <!-- ... statement + steps + .answer-box with the printed answer ... -->
+
+  <!-- Invisible (a non-JS <script> never renders). Recompute from the GIVEN data; the helper
+       does the math — NEVER pass the claimed answer in as the recomputation. -->
+  <script type="text/x-verify" data-for="例1 滑块加速度 a_x">
+import sympy as sp
+t, w, lam, l = sp.symbols('t omega lambda l', positive=True)
+x = l*((1 - lam**2/4) - sp.cos(w*t) - (lam/4)*sp.cos(2*w*t))   # GIVEN x(t), copied from the题面
+check_derivative(given=x, wrt=t, order=2,
+                 claimed=l*w**2*(sp.cos(w*t) + lam*sp.cos(2*w*t)),  # the answer the card prints
+                 name="例1 a_x")
+  </script>
+</div>
+```
+
+Pre-imported helpers (from `scripts/verify_helpers.py`) — each recomputes, then compares:
+`check_derivative(given,wrt,order,claimed)` · `check_integral(integrand,var,claimed)` ·
+`check_equal(recomputed,claimed)` · `check_consistent(route_a,route_b)` (两路差分对账 / blind
+double-solve made executable) · `check_limit(expr,var,point,expected)` (极限 sanity) ·
+`check_numeric(expr,subs,expected)` (数值代入 sanity). Put 2–3 checks per problem when possible
+(e.g. one `check_derivative` + one `check_limit`), so the badge reflects more than one angle.
+
+### Abstention badge (when you cannot machine-verify)
+
+```css
+.b-unverified{background:var(--bg3);color:var(--text2);border:1px dashed var(--border);}
+```
+
+Usage: `<span class="badge b-unverified">未自动核验</span>`. This is the honest default whenever a
+problem has no clean symbolic check (proofs, "解释/讨论"类, experiment design). A `未自动核验`
+solution may still be correct — it just was not auto-checked, so it does not claim to be.
+
+### Run order
+
+```bash
+python scripts/build_and_check.py check <file>.html      # static lint (the artifact EXISTS)
+python scripts/verify_solutions.py <file>.html           # executes the checks (the artifact is TRUE)
+```
+
+`build_and_check` accepts an x-verify block as a valid verify artifact; `verify_solutions` is the
+decisive gate. **Hard rule:** if `verify_solutions` FAILs a solution, fix the solution (or downgrade
+its badge to `未自动核验`) before shipping — a false `已核验` is worse than none.
