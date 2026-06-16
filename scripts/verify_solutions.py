@@ -95,8 +95,13 @@ def run_block(code, timeout=20):
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(src)
         try:
+            # Force UTF-8 for the child's stdout AND decode it as UTF-8, so a check name with a
+            # non-ASCII math symbol (²  √  π  ω …) can't crash the run on a non-UTF-8 locale
+            # (e.g. Windows GBK): without this the child raises UnicodeEncodeError on print and the
+            # block looks "failed". errors='replace' is a final guard so a stray byte never throws.
+            env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
             r = subprocess.run([sys.executable, path], capture_output=True, text=True,
-                               timeout=timeout)
+                               timeout=timeout, encoding="utf-8", errors="replace", env=env)
         except subprocess.TimeoutExpired:
             return False, f"TIMEOUT after {timeout}s"
         out = (r.stdout or "") + (r.stderr or "")

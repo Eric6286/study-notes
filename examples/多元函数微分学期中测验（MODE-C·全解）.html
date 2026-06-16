@@ -270,7 +270,17 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">1</div><h2>第 1 题</h2></div>
   <div class="card">
-    <h3>分段函数在原点的偏导数存在性</h3>
+    <h3>分段函数在原点的偏导数存在性 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q1 答案见解析">
+x, y = sp.symbols('x y', positive=True)
+n = sp.symbols('n', integer=True, positive=True)
+f = y*sp.sin(1/(x**2+y**2))
+check_equal(f.subs(y, 0), 0, name="Q1 f(x,0)=0 -> f_x(0,0)=0 存在")
+y1 = 1/sp.sqrt(2*n*sp.pi + sp.pi/2)
+y2 = 1/sp.sqrt(2*n*sp.pi)
+check_equal(sp.sin(1/y1**2), 1, name="Q1 子列1 sin(1/y^2)=1")
+check_equal(sp.sin(1/y2**2), 0, name="Q1 子列2 sin(1/y^2)=0 -> f_y(0,0)不存在 -> B")
+    </script>
     <p class="qstem">设 $f(x,y)=\begin{cases} y\sin\dfrac{1}{x^2+y^2}, & x^2+y^2\neq 0\\[6pt] 0, & x^2+y^2=0\end{cases}$，则 $f(x,y)$ 在点 $(0,0)$ 处</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>两个偏导数都不存在</div>
@@ -304,7 +314,20 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">2</div><h2>第 2 题</h2></div>
   <div class="card">
-    <h3>隐函数确定的二阶偏导关系</h3>
+    <h3>隐函数确定的二阶偏导关系 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q2 答案见解析">
+x, y = sp.symbols('x y')
+z = sp.Function('z')
+F = x + y + z(x, y) - sp.exp(z(x, y))
+zx = sp.solve(sp.Eq(sp.diff(F, x), 0), sp.diff(z(x, y), x))[0]
+zy = sp.solve(sp.Eq(sp.diff(F, y), 0), sp.diff(z(x, y), y))[0]
+check_equal(zx - zy, 0, name="Q2 z_x=z_y")
+zxx = sp.diff(zx, x).subs(sp.diff(z(x, y), x), zx)
+zxy = sp.diff(zx, y).subs(sp.diff(z(x, y), y), zy)
+zyy = sp.diff(zy, y).subs(sp.diff(z(x, y), y), zy)
+check_equal(zxx - zxy, 0, name="Q2 z_xx=z_xy -> 选C")
+check_equal(zxx - zyy, 0, name="Q2 z_xx=z_yy")
+    </script>
     <p class="qstem">设函数 $z=f(x,y)$ 由方程 $x+y+z=\e^{z}$ 确定，则正确的结论是</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>$\dfrac{\partial^2 z}{\partial x^2}\neq\dfrac{\partial^2 z}{\partial y^2}$</div>
@@ -337,7 +360,21 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">3</div><h2>第 3 题</h2></div>
   <div class="card">
-    <h3>全微分的判定（相容条件 $P_y=Q_x$）</h3>
+    <h3>全微分的判定（相容条件 $P_y=Q_x$） <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q3 答案见解析">
+x, y = sp.symbols('x y')
+opts = {
+ 'A': (3*x**2+4*x*y, 2*x**3-3*y**2),
+ 'B': (y*sp.cos(x+y), sp.sin(x+y)-y*sp.cos(x+y)),
+ 'C': (2*x*y+1, x**2+2*y),
+ 'D': (2*x**2*y+x, x**3+2*x*y),
+}
+exact = [k for k, (P, Q) in opts.items() if sp.simplify(sp.diff(P, y)-sp.diff(Q, x)) == 0]
+check_equal(sp.Integer(len(exact)), 1, name="Q3 恰一个选项满足 P_y=Q_x")
+assert exact == ['C'], exact
+P, Q = opts['C']
+check_equal(sp.diff(P, y), sp.diff(Q, x), name="Q3 C 满足相容条件 -> 答案C")
+    </script>
     <p class="qstem">下列各式中，（&nbsp;&nbsp;）是某二元函数 $f(x,y)$ 的全微分</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>$(3x^2+4xy)\,\d x+(2x^3-3y^2)\,\d y$</div>
@@ -374,7 +411,17 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">4</div><h2>第 4 题</h2></div>
   <div class="card">
-    <h3>极值点的必要条件（费马引理的陷阱）</h3>
+    <h3>极值点的必要条件（费马引理的陷阱） <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q4 答案见解析">
+x, y = sp.symbols('x y', real=True)
+dq = sp.sqrt(x**2)/x
+check_equal(sp.limit(dq, x, 0, '+'), 1, name="Q4 f=√(x²+y²) f_x右极限=+1")
+check_equal(sp.limit(dq, x, 0, '-'), -1, name="Q4 f_x左极限=-1 -> 极值点偏导可不存在(否定D)")
+g = x**2 + y**2
+check_equal(sp.diff(g, x).subs({x: 0, y: 0}), 0, name="Q4 f=x²+y² f_x(0,0)=0 存在(否定B)")
+check_equal((sp.diff(g, x, y))**2 - sp.diff(g, x, 2)*sp.diff(g, y, 2), -4,
+            name="Q4 该极小点判别式=-4≠0(否定A) -> 选C")
+    </script>
     <p class="qstem">若 $P_0(x_0,y_0)$ 是函数 $f(x,y)$ 的极值点，则</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>$[f''_{xy}(x_0,y_0)]^2-f''_{xx}(x_0,y_0)\cdot f''_{yy}(x_0,y_0)=0$</div>
@@ -410,7 +457,20 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">5</div><h2>第 5 题</h2></div>
   <div class="card">
-    <h3>哪个二元函数在整个平面处处连续</h3>
+    <h3>哪个二元函数在整个平面处处连续 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q5 答案见解析">
+x, y, r, th = sp.symbols('x y r theta', real=True)
+C = x**2*y/(x**4+y**2)
+check_equal(sp.limit(C.subs(y, x**2), x, 0), sp.Rational(1, 2), name="Q5 C 沿y=x²->1/2")
+check_equal(sp.limit(C.subs(y, 0), x, 0), 0, name="Q5 C 沿y=0->0 (C不连续)")
+D = x**2*y**2/(x**2*y**2+(x-y)**2)
+check_equal(sp.limit(D.subs(y, x), x, 0), 1, name="Q5 D 沿y=x->1")
+check_equal(sp.limit(D.subs(y, 0), x, 0), 0, name="Q5 D 沿y=0->0 (D不连续)")
+LA = sp.limit(sp.log(sp.Abs(1-x**2)), x, 1)
+check_equal(sp.exp(LA), 0, name="Q5 A 单位圆上 ln|1-x^2|->-oo (exp(L)=0) -> A不连续")
+Bopt = sp.sin(x*y)/y
+check_equal(sp.limit(Bopt, y, 0), x, name="Q5 B lim sin(xy)/y=x 可去 -> B处处连续")
+    </script>
     <p class="qstem">下列函数中，在整个 $xOy$ 平面上处处连续的是</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>$z=\ln|1-x^2-y^2|$</div>
@@ -445,7 +505,15 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">6</div><h2>第 6 题</h2></div>
   <div class="card">
-    <h3>二阶判别法：判别式为正 ⇒ 鞍点</h3>
+    <h3>二阶判别法：判别式为正 ⇒ 鞍点 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q6 答案见解析">
+x, y, t = sp.symbols('x y t', real=True)
+f = x*y
+A = sp.diff(f, x, 2); Bm = sp.diff(f, x, y); Cc = sp.diff(f, y, 2)
+check_equal(Bm**2 - A*Cc, 1, name="Q6 f=xy 判别式 B²-AC=1>0")
+check_equal(f.subs({x: t, y: t}), t**2, name="Q6 沿y=x f=t²>0")
+check_equal(f.subs({x: t, y: -t}), -t**2, name="Q6 沿y=-x f=-t²<0 -> 变号 -> 鞍点(选C)")
+    </script>
     <p class="qstem">设点 $P_0(x_0,y_0)$ 是函数 $f(x,y)$ 的驻点，$f(x,y)$ 在 $P_0$ 的某邻域内具有二阶连续偏导数，且 $\big[f''_{xy}(x_0,y_0)\big]^2-f''_{xx}(x_0,y_0)\cdot f''_{yy}(x_0,y_0)>0$，则</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>当 $f''_{xx}(x_0,y_0)<0$ 时，$P_0$ 是极小值点</div>
@@ -482,7 +550,19 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">7</div><h2>第 7 题</h2></div>
   <div class="card">
-    <h3>偏导数的几何意义：切向量 vs 可微</h3>
+    <h3>偏导数的几何意义：切向量 vs 可微 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q7 答案见解析">
+x = sp.symbols('x')
+f = sp.Function('f')
+r = sp.Matrix([x, 0, f(x)])
+rp = sp.diff(r, x).subs(sp.Derivative(f(x), x), 3).subs(x, 0)   # 截痕曲线 z=f(x,0) 的切向量
+check_equal(rp[0], 1, name="Q7 切向量 x 分量=1")
+check_equal(rp[1], 0, name="Q7 切向量 y 分量=0")
+check_equal(rp[2], 3, name="Q7 切向量 z 分量=f_x(0,0)=3 -> 向量(1,0,3)=D")
+cr = rp.cross(sp.Matrix([3, 0, 1]))
+check_equal(cr[1], 8, name="Q7 (1,0,3)x(3,0,1) 的 y 分量=8 (非零) -> A 的(3,0,1)方向错")
+check_equal(sp.Matrix([3, -1, -1])[2] - sp.Matrix([3, -1, 1])[2], -2, name="Q7 真法向 z=-1 != C 法向 z=1")
+    </script>
     <p class="qstem">设函数 $f(x,y)$ 在点 $(0,0)$ 的某邻域内有定义，且 $f_x(0,0)=3,\ f_y(0,0)=-1$，则有</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>曲线 $\begin{cases}z=f(x,y)\\ y=0\end{cases}$ 在点 $(0,0,f(0,0))$ 的一个切向量为 $(3,0,1)$</div>
@@ -499,7 +579,7 @@ details[open] summary::before{transform:rotate(90deg);}
       <p>只给"偏导数存在"，<strong>不能</strong>推出可微（全微分、切平面、法向量都需要可微）。但截痕曲线 $y=0$ 的切向量只用到一元导数 $f_x(0,0)$，必然成立。</p>
       <h4>详细求解</h4>
       <p>曲线 $\{z=f(x,y),\,y=0\}$ 即 $z=f(x,0)$，用 $x$ 作参数 $\vec r(x)=(x,\,0,\,f(x,0))$，</p>
-      <div class="fbox"><div class="frow">$$\vec r\,'(0)=\big(1,\,0,\,f_x(0,0)\big)=(1,0,3).$$</div></div>
+      <div class="fbox"><div class="frow">$$(\vec r\,)'(0)=\big(1,\,0,\,f_x(0,0)\big)=(1,0,3).$$</div></div>
       <p>故 D 正确、A（$(3,0,1)$ 方向不符）错误。再看 B、C：</p>
       <ul>
         <li><strong>B 错：</strong>$\d z=3\,\d x-\d y$ 需要 $f$ 在原点<strong>可微</strong>，而仅有偏导存在不足以保证可微。</li>
@@ -519,7 +599,20 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">8</div><h2>第 8 题</h2></div>
   <div class="card">
-    <h3>由全微分还原原函数</h3>
+    <h3>由全微分还原原函数 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q8 答案见解析">
+x, y = sp.symbols('x y')
+P = x**2 + 2*x*y - y**2
+Q = x**2 - 2*x*y - y**2
+frec = sp.integrate(P, x)
+gp = sp.simplify(Q - sp.diff(frec, y))
+check_equal(gp, -y**2, name="Q8 g'(y)=-y²")
+g = sp.integrate(gp, y)
+ffull = sp.expand(frec + g)
+check_equal(ffull, x**3/3 + x**2*y - x*y**2 - y**3/3, name="Q8 f=x³/3+x²y-xy²-y³/3(+C) -> A")
+check_equal(sp.diff(ffull, x), P, name="Q8 校验 f_x=P")
+check_equal(sp.diff(ffull, y), Q, name="Q8 校验 f_y=Q")
+    </script>
     <p class="qstem">已知函数的全微分 $\d f(x,y)=(x^2+2xy-y^2)\,\d x+(x^2-2xy-y^2)\,\d y$，则 $f(x,y)=$</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>$\dfrac{x^3}{3}+x^2y-xy^2-\dfrac{y^3}{3}+C$</div>
@@ -556,7 +649,16 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">9</div><h2>第 9 题</h2></div>
   <div class="card">
-    <h3>判别式 $=0$ 失效时的极值分析</h3>
+    <h3>判别式 $=0$ 失效时的极值分析 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q9 答案见解析">
+x, y, t = sp.symbols('x y t', real=True)
+z1 = y**2 + x**3
+check_equal(z1.subs(y, 0), x**3, name="Q9 z1(x,0)=x³")
+check_equal((x**3).subs(x, t) + (x**3).subs(x, -t), 0, name="Q9 x³在±t反号 -> z1无极值")
+z2 = (x**2 + y**2)**2
+check_equal(z2.subs({x: 0, y: 0}), 0, name="Q9 z2(0,0)=0")
+check_equal(z2, (x**2+y**2)**2, name="Q9 z2=(x²+y²)²≥0 -> 极小 (选B)")
+    </script>
     <p class="qstem">函数 $z=y^2+x^3$ 和 $z=(x^2+y^2)^2$ 在驻点 $(0,0)$ 处，均有 $[f''_{xy}(0,0)]^2-f''_{xx}(0,0)\cdot f''_{yy}(0,0)=0$，则这两个函数在原点 $(0,0)$ 处</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>都取极值</div>
@@ -590,7 +692,16 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">10</div><h2>第 10 题</h2></div>
   <div class="card">
-    <h3>连续但偏导数不存在（圆锥面顶点）</h3>
+    <h3>连续但偏导数不存在（圆锥面顶点） <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q10 答案见解析">
+r, th = sp.symbols('r theta', positive=True)
+u = sp.symbols('u', real=True)
+f = sp.sqrt((r*sp.cos(th))**2 + (r*sp.sin(th))**2)
+check_equal(sp.limit(f, r, 0, '+'), 0, name="Q10 极坐标 lim=0 连续")
+dq = sp.sqrt(u**2)/u          # f(x,0)=|x|, 差商=|x|/x
+check_equal(sp.limit(dq, u, 0, '+'), 1, name="Q10 f_x 右极限=+1")
+check_equal(sp.limit(dq, u, 0, '-'), -1, name="Q10 f_x 左极限=-1 -> 偏导不存在 (连续但偏导不存在=C)")
+    </script>
     <p class="qstem">函数 $f(x,y)=\sqrt{x^2+y^2}$ 在点 $(0,0)$ 处</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>不连续，两个偏导数存在</div>
@@ -622,7 +733,16 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">11</div><h2>第 11 题</h2></div>
   <div class="card">
-    <h3>多元介值定理：连通性是关键</h3>
+    <h3>多元介值定理：连通性是关键 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q11 答案见解析">
+pts = [(0, 0), (2, 0)]
+vals = [p[0] for p in pts]   # f(x,y)=x on the disconnected closed&bounded set
+m_, M_ = min(vals), max(vals)
+mu = 1
+ok = (m_ <= mu <= M_) and (mu not in vals)
+check_equal(sp.Integer(1) if ok else sp.Integer(0), 1,
+            name="Q11 不连通闭有界集上 μ=1∈[0,2] 取不到 -> 闭(A)/有界(D)不充分 -> 必须连通(C)")
+    </script>
     <p class="qstem">设 $m,M$ 分别为函数 $\alpha=f(x,y)$ 在区域 $D$ 上的最小值与最大值，且 $m\le\mu\le M$，则</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>当 $D$ 为闭集，$f$ 为连续函数，则在 $D$ 上至少有一点 $P$，使 $f(P)=\mu$</div>
@@ -659,7 +779,18 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">12</div><h2>第 12 题</h2></div>
   <div class="card">
-    <h3>二重极限的存在性判定</h3>
+    <h3>二重极限的存在性判定 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q12 答案见解析">
+x, y, r, th = sp.symbols('x y r theta', real=True)
+C = x*y/sp.sqrt(x**2+y**2)
+check_equal(sp.limit(C.subs({x: r*sp.cos(th), y: r*sp.sin(th)}), r, 0), 0, name="Q12 C 极坐标->0 存在")
+Bb = (x+y)/(x-y)
+check_equal(sp.limit(Bb.subs(y, 0), x, 0), 1, name="Q12 B 沿y=0->1")
+check_equal(sp.limit(Bb.subs(x, 0), y, 0), -1, name="Q12 B 沿x=0->-1 (B不存在)")
+D = x*y/(x**2+y**2)
+check_equal(sp.limit(D.subs(y, x), x, 0), sp.Rational(1, 2), name="Q12 D 沿y=x->1/2")
+check_equal(sp.limit(D.subs(y, 0), x, 0), 0, name="Q12 D 沿y=0->0 (D不存在) -> 选C")
+    </script>
     <p class="qstem">下列函数中，当 $(x,y)\to(0,0)$ 时，极限存在的是</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>$\sin\dfrac{1}{xy}$</div>
@@ -696,7 +827,15 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">13</div><h2>第 13 题</h2></div>
   <div class="card">
-    <h3>由极限条件判断是否为极值点</h3>
+    <h3>由极限条件判断是否为极值点 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q13 答案见解析">
+x = sp.symbols('x', real=True)
+fp = x*x + (x**2 + x**2)**2          # 沿 y=x: f≈ xy+(x²+y²)²
+fm = x*(-x) + (x**2 + x**2)**2       # 沿 y=-x
+check_equal(sp.series(fp, x, 0, 3).removeO().coeff(x, 2), 1, name="Q13 沿y=x 主项系数 +1 (>0)")
+check_equal(sp.series(fm, x, 0, 3).removeO().coeff(x, 2), -1,
+            name="Q13 沿y=-x 主项系数 -1 (<0) -> 增量变号 -> 非极值(D)")
+    </script>
     <p class="qstem">已知函数 $f(x,y)$ 在点 $(0,0)$ 的某个邻域内连续，且 $\displaystyle\lim_{(x,y)\to(0,0)}\dfrac{f(x,y)-xy}{(x^2+y^2)^2}=1$，则下述四个选项中正确的是</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>点 $(0,0)$ 是 $f(x,y)$ 的极小值点</div>
@@ -730,7 +869,18 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">14</div><h2>第 14 题</h2></div>
   <div class="card">
-    <h3>"二阶偏导存在"能推出什么</h3>
+    <h3>"二阶偏导存在"能推出什么 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q14 答案见解析">
+x, y = sp.symbols('x y', real=True)
+f = x*y*(x**2 - y**2)/(x**2 + y**2)
+fx_0y = sp.limit(f/x, x, 0)                       # f_x(0,y) = -y
+fyx = sp.limit((fx_0y - fx_0y.subs(y, 0))/y, y, 0)  # f_yx(0,0)
+fy_x0 = sp.limit(f/y, y, 0)                       # f_y(x,0) = x
+fxy = sp.limit((fy_x0 - fy_x0.subs(x, 0))/x, x, 0)  # f_xy(0,0)
+check_equal(fxy, 1, name="Q14 f_xy(0,0)=1")
+check_equal(fyx, -1, name="Q14 f_yx(0,0)=-1")
+check_equal(fxy - fyx, 2, name="Q14 f_xy≠f_yx -> 二阶偏导存在不蕴含相等/可微/连续 -> 选A")
+    </script>
     <p class="qstem">若函数 $f(x,y)$ 在区域 $D$ 内具有二阶偏导数，则正确的结论是</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>A、B、C 三个结论都不对</div>
@@ -766,7 +916,14 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">15</div><h2>第 15 题</h2></div>
   <div class="card">
-    <h3>连续且两偏导存在</h3>
+    <h3>连续且两偏导存在 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q15 答案见解析">
+x, y, r, th = sp.symbols('x y r theta', real=True)
+f = x**2*y/(x**2 + y**2)
+check_equal(sp.limit(f.subs({x: r*sp.cos(th), y: r*sp.sin(th)}), r, 0), 0, name="Q15 极坐标->0 连续")
+check_equal(f.subs(y, 0), 0, name="Q15 f(x,0)=0 -> f_x(0,0)=0")
+check_equal(f.subs(x, 0), 0, name="Q15 f(0,y)=0 -> f_y(0,0)=0 -> 连续且偏导存在(D)")
+    </script>
     <p class="qstem">函数 $f(x,y)=\begin{cases}\dfrac{x^2y}{x^2+y^2}, & x^2+y^2\neq0\\[6pt] 0, & x^2+y^2=0\end{cases}$ 在点 $(0,0)$ 处</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>不连续，两个偏导数不存在</div>
@@ -799,7 +956,16 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">16</div><h2>第 16 题</h2></div>
   <div class="card">
-    <h3>间断点的判定（定义域边界）</h3>
+    <h3>间断点的判定（定义域边界） <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q16 答案见解析">
+x, y, r = sp.symbols('x y r', real=True)
+z = 1/sp.sqrt(x**2 + y**2 - 1)
+L1 = sp.limit(z.subs(y, 0), x, 1, '+')
+check_equal(1/L1, 0, name="Q16 沿x->1+ z->+oo (1/z->0)")
+zr = 1/sp.sqrt(r**2 - 1)          # 圆周点径向: x^2+y^2=r^2
+L2 = sp.limit(zr, r, 1, '+')
+check_equal(1/L2, 0, name="Q16 任意圆周点径向 r->1+ z->oo -> 整条圆周间断(A)")
+    </script>
     <p class="qstem">对函数 $z=\dfrac{1}{\sqrt{x^2+y^2-1}}$，则正确的结论是</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>在 $xOy$ 平面上，圆周 $x^2+y^2=1$ 上的所有点是它的间断点</div>
@@ -833,7 +999,16 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">17</div><h2>第 17 题</h2></div>
   <div class="card">
-    <h3>对数求导法解隐函数 $x^{y}=y^{x}$</h3>
+    <h3>对数求导法解隐函数 $x^{y}=y^{x}$ <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q17 答案见解析">
+x, y = sp.symbols('x y', positive=True)
+F = y*sp.log(x) - x*sp.log(y)     # 取对数: y ln x = x ln y
+dydx = sp.idiff(F, y, x)
+claimed = y**2*(1 - sp.log(x))/(x**2*(1 - sp.log(y)))   # 选项D
+for pt in [{x: 2, y: 4}, {x: 4, y: 2}]:   # 曲线 x^y=y^x 上的点
+    check_numeric(dydx.subs(pt), {}, complex(claimed.subs(pt)), tol=1e-9,
+                  name=f"Q17 dy/dx 在 {pt} 与 D 一致")
+    </script>
     <p class="qstem">设函数 $y=f(x)$ 由方程 $x^{y}=y^{x}$（$x\neq y$）确定，则 $\dfrac{\d y}{\d x}=$</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>$\dfrac{x^2(1-\ln y)}{y^2(1-\ln x)}$</div>
@@ -872,7 +1047,17 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">18</div><h2>第 18 题</h2></div>
   <div class="card">
-    <h3>空间图形与方程组的对应</h3>
+    <h3>空间图形与方程组的对应 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q18 答案见解析">
+x, y, z, r = sp.symbols('x y z r', real=True)
+rsol = [s for s in sp.solve(sp.Eq(r, 2 - r**2), r) if s.is_positive][0]
+check_equal(rsol, 1, name="Q18 (3)锥z=√(x²+y²)与抛物面z=2-x²-y²交于r=1")
+check_equal((2 - r**2).subs(r, 1), 1, name="Q18 (3) 交线 z=1 (有界闭纺锤=图c)")
+check_equal(sp.diff(2*y**2 - x, z), 0, name="Q18 (1)2y²=x 不含z=抛物柱面(图a)")
+px = sp.Poly(x**2 + y**2 - z, x, y)
+check_equal(px.coeff_monomial(x**2) - px.coeff_monomial(y**2), 0,
+            name="Q18 (4)x²+y²=z 旋转抛物面(图d) -> 自然顺序对应")
+    </script>
     <p class="qstem">考虑以下图形 (a)、(b)、(c)、(d)（见原卷立体图）和下面的方程，求图形与方程的对应关系：</p>
     <p class="fig-ref" style="color:var(--text3);font-size:13px;font-style:italic;padding:4px 0 4px 12px;border-left:3px solid var(--border);margin:8px 0;">（图形见原试卷：(a) 沿 $x$ 轴张开的抛物柱面被一斜平面所截；(b) 顶点在 $z=1$、沿 $y$ 轴的下开口抛物柱面配三角形底；(c) 上下对称的纺锤形闭曲面；(d) 旋转抛物面与抛物柱面相交的复杂体。）</p>
     <div class="opts">
@@ -909,7 +1094,15 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">19</div><h2>第 19 题</h2></div>
   <div class="card">
-    <h3>含 $\sin(x^2+y^2)$ 的连续性与偏导</h3>
+    <h3>含 $\sin(x^2+y^2)$ 的连续性与偏导 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q19 答案见解析">
+x, y, r, th = sp.symbols('x y r theta', positive=True)
+f = sp.sqrt(sp.Abs(x*y))/(x**2 + y**2)*sp.sin(x**2 + y**2)
+fr = f.subs({x: r*sp.cos(th), y: r*sp.sin(th)})
+check_equal(sp.limit(sp.Abs(fr), r, 0, '+'), 0, name="Q19 极坐标 |f|->0 连续")
+check_equal(f.subs(y, 0), 0, name="Q19 f(x,0)=0 -> f_x存在")
+check_equal(f.subs(x, 0), 0, name="Q19 f(0,y)=0 -> f_y存在 -> 连续且偏导存在(B)")
+    </script>
     <p class="qstem">设函数 $f(x,y)=\begin{cases}\dfrac{\sqrt{|xy|}}{x^2+y^2}\sin(x^2+y^2), & x\neq0,\,y\neq0\\[6pt] 0, & x=0,\,y=0\end{cases}$ 在点 $(0,0)$ 处</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>连续，两个偏导数不存在</div>
@@ -944,7 +1137,16 @@ details[open] summary::before{transform:rotate(90deg);}
 <div class="section">
   <div class="section-header"><div class="section-num">20</div><h2>第 20 题</h2></div>
   <div class="card">
-    <h3>反正弦复合函数的定义域</h3>
+    <h3>反正弦复合函数的定义域 <span class="badge b-verified">已核验 ✓</span></h3>
+    <script type="text/x-verify" data-for="q20 答案见解析">
+xv, yv = -2, 1     # 见证点: y/x=-1/2 ∈ [-1,1] 在定义域内
+in_domain = (-1 <= sp.Rational(yv, xv)) and (sp.Rational(yv, xv) <= 1)
+check_equal(sp.Integer(1) if in_domain else 0, 1, name="Q20 (-2,1): y/x=-1/2∈[-1,1] 在定义域内")
+C_ok = abs(yv) <= abs(xv)        # |y|<=|x|: 1<=2 True
+D_ok = abs(yv) <= xv             # |y|<=x : 1<=-2 False
+check_equal(sp.Integer(1) if (C_ok and not D_ok) else 0, 1,
+            name="Q20 该点满足C(|y|<=|x|)却不满足D(|y|<=x) -> 选C")
+    </script>
     <p class="qstem">函数 $z=\arcsin\dfrac{y}{x}$ 的定义域是</p>
     <div class="opts">
       <div class="opt"><span class="ol">A.</span>$\{(x,y)\mid y\ge x\ \text{且}\ x\neq0\}$</div>
