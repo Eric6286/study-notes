@@ -102,19 +102,24 @@ def check_forbidden(html):
     return hits
 
 
-# A verified-answer badge ("已核验", optionally "已核验 ✓") and the machine-checkable
-# artifact that must back it: an HTML comment recording the independent re-solve, e.g.
-#   <!-- verify: sympy diff(x,t,2)=l*w^2*(cos(wt)+lam*cos(2wt)), matches main solution -->
-# This turns the badge from decoration into something EARNED and auditable — the root cause
-# of "wrong answer still stamped 已核验". Authoring rule: one verify-comment per badge.
+# A verified-answer badge ("已核验") and the machine-checkable artifact that must back it. Two
+# accepted artifact forms:
+#   1. an executable  <script type="text/x-verify"> … </script>  block (the STRONG form — it is
+#      actually run by verify_solutions.py, which recomputes from the given data and compares);
+#   2. an  <!-- verify: … -->  comment recording the independent re-solve (the legacy/weak form).
+# This STATIC check only confirms an artifact EXISTS (badges <= artifacts). It does NOT prove the
+# artifact is true — that is verify_solutions.py's job (it executes form 1 and gates the badge).
+# Root cause it addresses: "wrong answer still stamped 已核验".
 VERIFY_BADGE_RE = re.compile(r"已核验")
-VERIFY_NOTE_RE = re.compile(r"<!--\s*verify:", re.IGNORECASE)
+VERIFY_NOTE_RE = re.compile(
+    r"<!--\s*verify:|<script[^>]*\btype\s*=\s*[\"']text/x-verify[\"']", re.IGNORECASE)
 
 
 def check_verified_badges(html):
-    """Return (n_badges, n_verify_notes). A file is non-compliant when it stamps more
-    '已核验' badges than it records '<!-- verify: -->' artifacts — i.e. it claims
-    verification it never wrote down."""
+    """Return (n_badges, n_verify_artifacts). Non-compliant when a file stamps more '已核验'
+    badges than it carries verify artifacts (x-verify block or <!-- verify --> comment) — i.e.
+    it claims verification it never recorded. Run verify_solutions.py to check the artifacts are
+    actually TRUE, not merely present."""
     return len(VERIFY_BADGE_RE.findall(html)), len(VERIFY_NOTE_RE.findall(html))
 
 
@@ -221,7 +226,8 @@ def run_checks(path):
         print("       Either add the missing check(s) (do derivatives/algebra with sympy, not by")
         print("       hand) or remove the unearned badge. A false 已核验 is worse than none.")
     elif badges:
-        print(f"[ok]  {badges} '已核验' badge(s), each backed by a verify artifact")
+        print(f"[ok]  {badges} '已核验' badge(s) each carry a verify artifact "
+              "(now run verify_solutions.py to EXECUTE them)")
     else:
         print("[ok]  no '已核验' badges (none required)")
 

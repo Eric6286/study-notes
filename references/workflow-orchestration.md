@@ -111,12 +111,13 @@ For each problem:
    independent final answer.
 
 3. **Reconcile.**
-   - Solver and Verifier **agree** → ship the cleaner write-up and tag it `已核验 ✓` — but the
-     badge is **earned, not decorative**. Record the independent check as an HTML comment next to
-     the answer: `<!-- verify: sympy diff(x,t,2)=l*w^2*(cos(wt)+lam*cos(2wt)), matches main solution -->`.
-     `build_and_check.py` **FAILs** any `已核验` that lacks a matching `<!-- verify: -->` artifact,
-     so **no recorded check → no badge**. A false `已核验` is worse than none (same honesty rule as
-     `.src-ref` citations).
+   - Solver and Verifier **agree** → encode the check as an executable `<script type="text/x-verify">`
+     block (recompute from the **given** data with sympy, assert it equals the printed answer) and run
+     `python scripts/verify_solutions.py <file>.html`. **The script, not you, decides the badge:** only
+     a PASSING block earns `已核验 ✓`; a problem with no clean machine-checkable form is tagged
+     `未自动核验`, never `已核验`. (Why a script and not a self-note: "I verified it" fails the same
+     way the answer does — the model that miscomputed will also miscertify. A false `已核验` is worse
+     than none, same honesty rule as `.src-ref`.)
    - They **disagree** → a reconciliation pass: locate the error (recompute the disputed step
      with code), re-derive, and only ship once two independent routes agree. **Never ship a
      problem whose two solves disagree.**
@@ -150,8 +151,10 @@ A problem's answer is not "done" until ALL applicable boxes pass:
 - [ ] **A problem that GIVES an equation and asks for its derivative** is solved by differentiating
       the GIVEN expression with `sympy` — never by pasting a remembered "standard"/textbook result.
 - [ ] **Independent re-solve agrees** (blind double-solve; for important problems a third route).
-- [ ] **Verify artifact recorded** — the independent check is written as an `<!-- verify: ... -->`
-      HTML comment beside the answer, so `已核验` is auditable and `build_and_check.py` passes.
+- [ ] **Executable check passes** — the solution carries a `<script type="text/x-verify">` block that
+      recomputes from the **given** data, and `verify_solutions.py` runs it GREEN. Only then may it
+      carry `已核验`; otherwise tag `未自动核验`. A written-down note alone is NOT enough — the gate is
+      that the check actually executes and agrees.
 - [ ] **Units / dimensions** are consistent on both sides of every equation and in the final answer.
 - [ ] **Limiting / special cases** behave sanely (set a mass→0, angle→0/90°, k→∞, etc.).
 - [ ] **Substitute the answer back** into the governing equation / original condition — it holds.
@@ -204,4 +207,8 @@ x=l*((1-lam**2/4)-sp.cos(w*t)-(lam/4)*sp.cos(2*w*t)); print(sp.factor(sp.diff(x,
 # -> l*omega**2*(lambda*cos(2*omega*t) + cos(omega*t))
 ```
 
-Put that exact output in the `<!-- verify: -->` comment; only then is the `已核验` badge earned.
+Encode that as an executable `<script type="text/x-verify">` block —
+`check_derivative(given=x, wrt=t, order=2, claimed=<printed answer>)` — and let
+`verify_solutions.py` run it. It recomputes the real value and **FAILs the wrong `claimed`**, which
+is exactly how this bug gets caught instead of rubber-stamped. (See `design-system.md` → "已核验
+verification — the EXECUTABLE gate".)
