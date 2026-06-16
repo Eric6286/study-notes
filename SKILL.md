@@ -363,7 +363,7 @@ If matches found inside a colored container, REMOVE the `\boxed{...}` wrapper �
 every one must be backed by the recorded check, placed right next to the answer:
 
 ```html
-<span class="badge b-green">已核验 ✓</span>
+<span class="badge b-verified">已核验 ✓</span>
 <!-- verify: sympy diff(x,t,2)=l*w^2*(cos(wt)+lam*cos(2wt)), matches main solution -->
 ```
 
