@@ -275,11 +275,15 @@ details[open] summary::before{transform:rotate(90deg);}
    NEVER use writing-mode, transform:rotate, or height/max-height on these. */
 .example-block{border:1px solid var(--border);border-radius:9px;overflow:visible;margin:14px 0;
   height:auto !important;max-height:none !important;}
-.example-header{background:var(--bg3);padding:10px 18px;font-size:13px;font-weight:700;
-  display:flex;align-items:center;gap:8px;flex-direction:row;flex-wrap:nowrap;
+.example-header{background:var(--bg3);padding:10px 18px;font-size:13px;font-weight:700;line-height:1.7;
+  /* Block flow, NOT flex. The header holds free text broken up by inline elements — a KaTeX
+     $v$ span, <strong>, a trailing 已核验 badge. Under display:flex each text run becomes a
+     separate anonymous flex item that shrinks to min-width on a phone, shattering the Chinese
+     title into vertical columns. Inline/block flow lets badge+text+math wrap as one normal
+     line. writing-mode/height stay !important to keep the past vertical-text fix. */
   border-bottom:1px solid var(--border);border-radius:9px 9px 0 0;
   writing-mode:horizontal-tb !important;height:auto !important;}
-.example-header .badge{flex-shrink:0;}
+.example-header .badge{vertical-align:middle;}
 .example-body{padding:16px 20px;height:auto !important;max-height:none !important;}
 .example-body p{font-size:14px;margin-bottom:8px;line-height:1.75;}
 .example-body p:last-child{margin-bottom:0;}
@@ -849,7 +853,46 @@ Reserve `.big-formula.highlight` (bordered, colored background) for the single m
 
 ## SVG Diagram Rules (CRITICAL — do not skip)
 
-These rules fix two recurring problems: oversized arrows that obscure labels, and unreadable proportions.
+These rules fix three recurring problems: oversized arrows that obscure labels, unreadable proportions, and **mysterious offset** — elements that each look right on their own but no longer line up because several coordinate mechanisms (viewBox mapping, percentage lengths, CSS transforms, text baselines, marker reference points) got mixed. Stay inside the safe-subset below and the offset stops happening; the arrow/label rules after it handle the other two.
+
+### SVG-safe-subset (avoid mysterious offset)
+
+LLM-drawn SVGs drift when several coordinate mechanisms get mixed: viewBox mapping, percentage lengths, CSS
+transforms, text baselines, marker reference points. Each element ends up "correct on its own" but no longer
+aligned. Stay inside this narrow subset and the offset becomes a non-issue. Our own diagram examples already
+follow it — copy them.
+
+- **One root `<svg>` per figure, no nested `<svg>`.** A nested `<svg>` opens a *new* coordinate system and
+  viewport; use `<g>` for grouping/layering instead. (The favicon `<svg>` in `<head>` does not count — it is a
+  separate `data:` image.)
+- **Always write `viewBox` + a matching `width`.** Use `viewBox="0 0 W H"` and a `width` with the **same aspect
+  ratio** (e.g. `viewBox="0 0 300 200" width="280"`), as the examples do. Mismatched ratios let
+  `preserveAspectRatio` letterbox the content, and that reads as "shifted", not "scaled".
+- **Absolute numbers only — never `%` geometry.** All `x` `y` `cx` `cy` `x1` `y1` `x2` `y2` `width` `height` on
+  shapes must be plain numbers in the viewBox coordinate system. A percentage resolves against the nearest SVG
+  viewport, which silently means the wrong box.
+- **No `foreignObject`.** Put any rich/HTML content (formulas, paragraphs) in normal HTML *below* the figure
+  (e.g. a `.fbox`), never inside the SVG.
+- **No CSS `transform` / `transform-origin` on SVG elements.** The CSS form is not equivalent to the SVG
+  attribute and its reference box is browser-dependent. To rotate, use the **SVG attribute with an explicit
+  centre**: `transform="rotate(30 150 100)"` (angle, then cx cy). Keep to at most one `<g transform="…">` layer.
+- **Place every `<text>` deliberately — don't leave centring to chance.** Set `text-anchor` (`middle` to centre
+  horizontally). For the vertical position, either set `dominant-baseline` (`middle` / `central`) as in the
+  side-label templates above, **or** place `y` against the default alphabetic baseline with a few px of
+  clearance (what the examples do). What fails is the half-measure: no anchor and an un-tuned `y` lands the
+  label wherever the font's baseline heuristics put it.
+- **Markers: reuse our marker, don't invent one.** The arrow marker defined above (`viewBox="0 0 10 10"
+  refX="9" refY="5" markerWidth="5" markerHeight="5"`) already declares explicit `viewBox`/`refX`/`refY` and a
+  small size — exactly what keeps the arrowhead glued to the line endpoint. Use it via `marker-end="url(#arr)"`.
+  If you ever define a new marker, copy those explicit attributes; do not rely on marker defaults.
+
+**Before shipping a figure, render and look.** The static scan (`build_and_check.py`) WARNs on the high-risk
+constructs (nested `<svg>`, `%` geometry, `foreignObject`, CSS `transform`/`transform-origin`), but it cannot
+see whether things actually *line up*. Open the finished file — you already do this for the KaTeX error banner —
+and glance at each diagram: nothing pushed outside the box, no label sitting on an arrowhead, no same-hue text
+vanishing (check dark mode too), every arrowhead attached. This single-engine "render and look" is the
+skill-sized substitute for a cross-browser screenshot-diff pipeline: keep the cheap structural check static, and
+replace the expensive pixel-diff with one human/agent glance at the rendered figures.
 
 ### Arrow size
 

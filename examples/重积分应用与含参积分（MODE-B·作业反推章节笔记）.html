@@ -199,11 +199,15 @@ details[open] summary::before{transform:rotate(90deg);}
 .b-red{background:var(--red-light);color:var(--red-dark);}
 .example-block{border:1px solid var(--border);border-radius:9px;overflow:visible;margin:14px 0;
   height:auto !important;max-height:none !important;}
-.example-header{background:var(--bg3);padding:10px 18px;font-size:13px;font-weight:700;
-  display:flex;align-items:center;gap:8px;flex-direction:row;flex-wrap:nowrap;
+.example-header{background:var(--bg3);padding:10px 18px;font-size:13px;font-weight:700;line-height:1.7;
+  /* Block flow, NOT flex. The header holds free text broken up by inline elements — a KaTeX
+     $v$ span, <strong>, a trailing 已核验 badge. Under display:flex each text run becomes a
+     separate anonymous flex item that shrinks to min-width on a phone, shattering the Chinese
+     title into vertical columns. Inline/block flow lets badge+text+math wrap as one normal
+     line. writing-mode/height stay !important to keep the past vertical-text fix. */
   border-bottom:1px solid var(--border);border-radius:9px 9px 0 0;
   writing-mode:horizontal-tb !important;height:auto !important;}
-.example-header .badge{flex-shrink:0;}
+.example-header .badge{vertical-align:middle;}
 .example-body{padding:16px 20px;height:auto !important;max-height:none !important;}
 .example-body p{font-size:14px;margin-bottom:8px;line-height:1.75;}
 .example-body p:last-child{margin-bottom:0;}

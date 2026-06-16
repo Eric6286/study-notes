@@ -20,6 +20,9 @@ Static checks (catch the SILENT failures KaTeX never reports):
   7. Silently-broken KaTeX macro definitions    (\bm:'{\boldsymbol}' / \unit:'{\,\text}' —
                                                  brace-wrapping a command whose arg comes from
                                                  outside → "Extra }" render error)
+  8. SVG safe-subset offset risks (WARN)        (nested <svg>, % geometry, <foreignObject>,
+                                                 CSS transform/transform-origin inside an SVG —
+                                                 constructs that cause "mysterious offset")
 
 Exit code: 0 = clean, 1 = one or more FAIL-level problems.
 \boxed is reported as a WARNING (allowed only in plain prose), and does not by
@@ -139,6 +142,83 @@ def check_broken_macros(html):
     return [line_of(html, m.start()) for m in BROKEN_MACRO_RE.finditer(html)]
 
 
+# SVG safe-subset offset risks (WARN-level — like \boxed, does NOT fail the build). Flags the few
+# constructs the design system's "SVG-safe-subset" forbids because they cause the "mysterious
+# offset" the report diagnosed: a nested <svg> (new coordinate system / viewport), % geometry
+# (resolves against the nearest viewport, not the canvas you think), <foreignObject>, and CSS
+# transform / transform-origin on an SVG element (reference box is browser-dependent — the SVG
+# attribute transform="rotate(a cx cy)" is the safe form). The favicon data-URI <svg> in <head> is
+# stripped first so it is never mistaken for a real or nested diagram svg.
+_SVG_OPEN = re.compile(r"<svg\b", re.IGNORECASE)
+_SVG_CLOSE = re.compile(r"</svg\s*>", re.IGNORECASE)
+_PCT_GEOM = re.compile(r"\b(?:cx|cy|x1|y1|x2|y2|x|y|width|height)\s*=\s*[\"'][0-9.]+%", re.IGNORECASE)
+_FOREIGN = re.compile(r"<foreignObject\b", re.IGNORECASE)
+_TRANSFORM_ORIGIN = re.compile(r"transform-origin", re.IGNORECASE)
+_CSS_TRANSFORM = re.compile(r"style\s*=\s*[\"'][^\"']*transform\s*:", re.IGNORECASE)
+
+
+def _strip_favicon_lines(html):
+    """Blank out favicon / data:image/svg+xml lines (keeping the newline count so line numbers
+    stay correct) so the inline favicon <svg> never counts as a diagram or a nested svg."""
+    out = []
+    for ln in html.split("\n"):
+        if re.search(r"rel=[\"']icon[\"']", ln) or re.search(r"data:image/svg\+xml", ln, re.IGNORECASE):
+            out.append("")
+        else:
+            out.append(ln)
+    return "\n".join(out)
+
+
+def _svg_spans(html):
+    """Walk <svg>/</svg> tokens in document order. Return (top_level_spans, nested_open_positions):
+    spans are (start, end) char offsets of each depth-0 <svg>…</svg> region (so % / foreignObject /
+    transform scans stay INSIDE svg and don't catch page-level CSS width:100% etc.); a nested-open
+    is an <svg encountered while already inside one."""
+    toks = [(m.start(), 1) for m in _SVG_OPEN.finditer(html)]
+    toks += [(m.start(), -1) for m in _SVG_CLOSE.finditer(html)]
+    toks.sort()
+    spans, nested = [], []
+    depth, start = 0, None
+    for pos, d in toks:
+        if d == 1:
+            if depth == 0:
+                start = pos
+            else:
+                nested.append(pos)
+            depth += 1
+        else:
+            if depth > 0:
+                depth -= 1
+                if depth == 0 and start is not None:
+                    spans.append((start, pos))
+                    start = None
+    return spans, nested
+
+
+def check_svg_offset_risks(html):
+    """WARN-level. Return sorted list of (line, category, detail) for SVG-safe-subset violations.
+    Empty list = clean. Never contributes to the FAIL count."""
+    stripped = _strip_favicon_lines(html)
+    spans, nested = _svg_spans(stripped)
+    hits = []
+    for pos in nested:
+        hits.append((line_of(stripped, pos), "nested-svg",
+                     "a <svg> inside another <svg> opens a new coordinate system; use <g> instead"))
+    scans = [
+        (_PCT_GEOM, "percent-geometry", "use absolute viewBox numbers, not % (resolves vs nearest viewport)"),
+        (_FOREIGN, "foreignObject", "put rich/HTML content below the figure, not inside the SVG"),
+        (_TRANSFORM_ORIGIN, "transform-origin", "reference box is browser-dependent on SVG"),
+        (_CSS_TRANSFORM, "css-transform", 'use SVG attribute transform="rotate(a cx cy)", not CSS transform'),
+    ]
+    for (s, e) in spans:
+        seg = stripped[s:e]
+        for rx, cat, detail in scans:
+            for m in rx.finditer(seg):
+                hits.append((line_of(stripped, s + m.start()), cat, detail))
+    hits.sort()
+    return hits
+
+
 def check_div_balance(html):
     opens = len(re.findall(r"<div\b", html))
     closes = len(re.findall(r"</div\s*>", html))
@@ -239,6 +319,18 @@ def run_checks(path):
         print("       (Allowed only in plain prose. Review each one.)")
     else:
         print("[ok]  no \\boxed found")
+
+    svg_hits = check_svg_offset_risks(html)
+    if svg_hits:
+        print(f"\n[WARN] {len(svg_hits)} SVG safe-subset risk(s) "
+              "(see design-system.md -> SVG-safe-subset):")
+        for ln, cat, detail in svg_hits[:30]:
+            print(f"  line {ln}: {cat} -- {detail}")
+        if len(svg_hits) > 30:
+            print(f"  ... and {len(svg_hits) - 30} more")
+        print("       (WARN only -- does not fail the build. Render the file and eyeball the figure.)")
+    else:
+        print("[ok]  no SVG safe-subset offset risks")
 
     print()
     if fails:

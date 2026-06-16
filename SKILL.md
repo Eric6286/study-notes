@@ -188,7 +188,7 @@ this is the fix for "MODE B 有时候题都做不对".
 1. **One card per problem.** Always-visible: 题号 + 完整题目文字 + 题目图. Collapsible `<details>`: 解答 (every step), with the final result in an `.answer-box`. Multi-part problems: label `(1) (2) (3)`, each with its own answer.
 
 2. **Figure rule (IMPORTANT — never drop a figure the problem depends on):**
-   - **Simple** geometric figure (a few lines/shapes, no photo, no fine detail) → **draw it as inline SVG** following the SVG Diagram Rules in `references/design-system.md`.
+   - **Simple** geometric figure (a few lines/shapes, no photo, no fine detail) → **draw it as inline SVG** following the SVG Diagram Rules in `references/design-system.md` — in particular the **SVG-safe-subset** (single root `<svg>`, absolute viewBox coords only, no nested `<svg>`/`%`/`foreignObject`/CSS-`transform`), which prevents the "mysterious offset" where elements stop lining up. `build_and_check.py` WARNs on those constructs; then **render the file and eyeball each figure** (single-engine "render and look") for the offsets a static scan can't see.
    - **Complex** figure, OR the problem **already comes with an image/photo/graph/circuit/scanned diagram** → **DO NOT redraw it.** Crop the original figure from the upload and **embed it as a base64 `<img>`**. Use `scripts/extract_pdf.py crop ...` to cut the figure region out of a PDF page, or `scripts/embed_images.py datauri <png>` to turn any image file into an inline data-URI. The HTML must stay a single standalone file, so all images are base64-inlined (never external `src` paths).
    - Decision checklist for "simple vs complex" is in `references/problem-solutions.md`.
 
