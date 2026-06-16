@@ -37,6 +37,10 @@ PROSE_MENTION = (
 # A real badge pill with extra attrs/whitespace (as the examples write it) IS counted.
 BADGE_STYLED = "<span class=\"badge b-green\" style=\"font-weight:700;\">已核验 ✓</span>"
 
+# Prime ' right after a TeX space inside math -> KaTeX "unknown group 'internal'" (MODE-C q7 trap).
+PRIME_BAD = "<div class=\"fbox\">$\\vec r\\,'(0)=(1,0,3)$</div>"
+PRIME_OK = "<div class=\"fbox\">$(\\vec r\\,)'(0)$ and $f'(x)$ and $a\\,b$</div>"  # fixed + normal primes
+
 # Silently-broken macro definitions: the brace-wrapped forms render as KaTeX "Extra }" errors.
 # As in the real HTML, each LaTeX backslash is doubled by the JS string literal.
 BROKEN_BM = "macros:{'\\\\bm':'{\\\\boldsymbol}'}"          # \bm{F} -> {\boldsymbol}{F} -> error
@@ -102,6 +106,13 @@ def run():
     badges, _ = b.check_verified_badges(BADGE_STYLED)
     assert badges == 1, f"styled badge pill should count once, got {badges}"
 
+    # 7c. a prime ' right after \\, inside math is caught (the KaTeX 'internal' render trap)
+    assert b.check_prime_after_space(PRIME_BAD), "prime-after-space must be caught"
+
+    # 7d. the fixed form (prime on a symbol) and ordinary primes are NOT flagged
+    assert b.check_prime_after_space(PRIME_OK) == [], \
+        f"clean primes wrongly flagged: {b.check_prime_after_space(PRIME_OK)}"
+
     # 8. brace-wrapped \bm / \unit macro bodies are flagged as silently-broken
     assert b.check_broken_macros(BROKEN_BM), "broken \\bm '{\\boldsymbol}' must be caught"
     assert b.check_broken_macros(BROKEN_UNIT), "broken \\unit '{\\,\\text}' must be caught"
@@ -138,7 +149,7 @@ def run():
     assert b.check_svg_offset_risks(ATTR_OK) == [], \
         f"SVG transform attribute wrongly flagged: {b.check_svg_offset_risks(ATTR_OK)}"
 
-    print("OK  build_and_check regression tests passed (18/18)")
+    print("OK  build_and_check regression tests passed (20/20)")
 
 
 if __name__ == "__main__":

@@ -71,7 +71,12 @@ def run():
              '<!-- 标 已核验 ✓ -->\n<script>x.replace(/已核验/, "")</script>')
     assert v.run_checks(prose) is True, "prose-only 已核验 must not be treated as a badge"
 
-    print("OK  verify_solutions regression tests passed (9/9)")
+    # 10. a check name with non-ASCII math symbols (²√πω) must run on any locale (utf-8 child I/O),
+    #     not crash with UnicodeEncodeError on a GBK/CP-936 console.
+    ok, out = v.run_block('check_equal(sp.Integer(2)**2, 4, name="面积 x² = √π·ω 验证")')
+    assert ok, f"unicode-named check must run under forced utf-8 child I/O, got:\n{out}"
+
+    print("OK  verify_solutions regression tests passed (10/10)")
 
 
 if __name__ == "__main__":

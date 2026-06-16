@@ -1495,6 +1495,13 @@ double-solve made executable) · `check_limit(expr,var,point,expected)` (极限 
 `check_numeric(expr,subs,expected)` (数值代入 sanity). Put 2–3 checks per problem when possible
 (e.g. one `check_derivative` + one `check_limit`), so the badge reflects more than one angle.
 
+`name=` strings may contain any Unicode (`²`, `√`, `π`, `ω`, Chinese …): `verify_solutions.run_block`
+forces the child subprocess to UTF-8 stdio, so the gate behaves identically on a UTF-8 or a
+GBK/CP-936 (Windows) console — a non-ASCII check name can no longer crash a block with
+`UnicodeEncodeError`. **A conceptual MCQ is still verifiable**: recompute the *decisive quantity*
+that fixes the keyed option (a limit / derivative / discriminant / tangent vector …) and refute the
+distractors with *computed* counterexamples — never by asserting the answer.
+
 ### Abstention badge (when you cannot machine-verify)
 
 ```css

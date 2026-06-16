@@ -150,6 +150,24 @@ def check_broken_macros(html):
     return [line_of(html, m.start()) for m in BROKEN_MACRO_RE.finditer(html)]
 
 
+# A prime ' immediately after a TeX spacing command (\, \; \: \! \ ) makes KaTeX throw
+# "Got group of unknown type: 'internal'" — the prime tries to superscript the spacing node, which
+# is not a real group. Another SILENT failure: no .katex-error in the static HTML, only at render.
+# Caught in MODE-C q7 ($\vec r\,'(0)$, where \,' broke). The fix is to put the prime on a symbol,
+# not on the space, e.g.  (\vec r\,)'(0).  Scanned only inside math spans.
+PRIME_AFTER_SPACE_RE = re.compile(r"\\[,;:!\s]\s*'")
+
+
+def check_prime_after_space(html):
+    """Lines where a prime ' follows a TeX spacing command inside math (KaTeX 'internal' error)."""
+    hits = []
+    for m in MATH_RE.finditer(html):
+        for _ in PRIME_AFTER_SPACE_RE.finditer(m.group()):
+            hits.append((line_of(html, m.start()), m.group()[:70].replace("\n", " ")))
+            break
+    return hits
+
+
 # SVG safe-subset offset risks (WARN-level — like \boxed, does NOT fail the build). Flags the few
 # constructs the design system's "SVG-safe-subset" forbids because they cause the "mysterious
 # offset" the report diagnosed: a nested <svg> (new coordinate system / viewport), % geometry
@@ -284,6 +302,17 @@ def run_checks(path):
         print(r"       \unit -> \,\text (no wrapping braces).")
     else:
         print("[ok]  no silently-broken macro definitions")
+
+    pas = check_prime_after_space(html)
+    if pas:
+        fails += 1
+        print(f"\n[FAIL] {len(pas)} prime ' right after a TeX space inside math "
+              "(KaTeX \"unknown group 'internal'\" render error):")
+        for ln, ctx in pas[:20]:
+            print(f"  line {ln}: …{ctx}…")
+        print(r"       Put the prime on a symbol, not the space, e.g.  \vec r\,'  ->  (\vec r\,)'.")
+    else:
+        print("[ok]  no prime-after-space KaTeX traps")
 
     opens, closes, page_open = check_div_balance(html)
     if opens != closes:

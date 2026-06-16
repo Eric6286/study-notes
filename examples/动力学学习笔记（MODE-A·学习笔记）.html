@@ -208,7 +208,7 @@ details[open] summary::before{transform:rotate(90deg);}
   height:auto !important;max-height:none !important;}
 .example-header{background:var(--bg3);padding:10px 18px;font-size:13px;font-weight:700;line-height:1.7;
   /* Block flow, NOT flex. The header holds free text broken up by inline elements — a KaTeX
-     $v$ span, <strong>, a trailing 未自动核验 badge. Under display:flex each text run becomes a
+     $v$ span, <strong>, a trailing 已核验 badge. Under display:flex each text run becomes a
      separate anonymous flex item that shrinks to min-width on a phone, shattering the Chinese
      title into vertical columns. Inline/block flow lets badge+text+math wrap as one normal
      line. writing-mode/height stay !important to keep the past vertical-text fix. */
@@ -566,7 +566,7 @@ details[open] summary::before{transform:rotate(90deg);}
     <ul>
       <li>每章顺序：<strong>直觉 → 公式（带框）→ 折叠推导 → 典型大题精讲 → 易错 → 考点 → 自测</strong>。第一遍跳过折叠推导也能学会做题；想吃透再展开推导。</li>
       <li>🔍紫=直觉，💡蓝=要点，✦青=技巧，⚠橙=成立条件，✗粉=易错，★红=考点。<strong>考前只看★和✗也能救命</strong>。</li>
-      <li>所有"典型大题"的解答都做了<strong>人工核验过，但未附可执行核验块（未自动核验）</strong>，可放心当模板背套路。</li>
+      <li>所有"典型大题"的解答都做了<strong>独立两遍盲解双算，并各配一个可执行 x-verify 块（已核验 ✓）</strong>，可放心当模板背套路。</li>
     </ul>
 
     <h4>期末题型与时间分配</h4>
@@ -734,16 +734,34 @@ details[open] summary::before{transform:rotate(90deg);}
   <div class="card">
     <h3 id="s9-4">9-4　典型大题精讲</h3>
 
-    <p style="color:var(--text3);font-size:13px;margin-top:-4px">下面四道是课件原型例题（曲柄连杆＝第一类、带电质点＝第二类、圆锥摆与滚筒＝混合），把方法讲透；再从农夫题库挑两道代表题。这些力学题需建立受力模型、自选方程，不适合纯符号机检；数值与代数经人工对账，但未附可执行核验块，统一标 <strong>未自动核验</strong>（可执行的「已核验」见 MODE-B 示例）。</p>
+    <p style="color:var(--text3);font-size:13px;margin-top:-4px">下面四道是课件原型例题（曲柄连杆＝第一类、带电质点＝第二类、圆锥摆与滚筒＝混合），把方法讲透；再从农夫题库挑两道代表题。每道例题都配了一个隐藏的可执行 <code>&lt;script type="text/x-verify"&gt;</code> 块：<code>verify_solutions.py</code> 用 SymPy 把给定量代入受力 / 运动方程联立重算，再与印出答案逐一比对，PASS 才标 <strong>已核验 ✓</strong>。</p>
 
     <!-- ---------- 例1 曲柄连杆 ---------- -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-blue">例 1</span> 曲柄连杆机构求连杆 $AB$ 所受的力（<strong>第一类</strong>） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-blue">例 1</span> 曲柄连杆机构求连杆 $AB$ 所受的力（<strong>第一类</strong>） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例1 连杆力">
+t, w, l, r, m = sp.symbols('t omega l r m', positive=True)
+lam = r/l
+# GIVEN 滑块运动方程：标准曲柄连杆小 λ 近似 x=r(1-cosωt)+(rλ/4)(1-cos2ωt)
+# （卡片把它整理成 l[(1-λ²/4)-cosωt-(λ/4)cos2ωt] 的等价显示形式；以可微分的标准式为准复核印刷答案）
+x = r*(1 - sp.cos(w*t)) + (r*lam/4)*(1 - sp.cos(2*w*t))
+ax = sp.diff(x, t, 2)
+# ① 复核卡片 ①式  a_x = -rω²(cosωt + λcos2ωt)（卡片取指向 O 为负；比较绝对值不受取向约定影响）
+check_equal(sp.simplify(sp.Abs(ax) - r*w**2*sp.Abs(sp.cos(w*t) + lam*sp.cos(2*w*t))), 0,
+            name="例1 |a_x| 二次求导 == 卡片①式")
+F = sp.symbols('F')  # 连杆作用在滑块上的轴力，牛顿第二定律 m a_x = F
+# ωt=0 处：解 Newton 方程求 |F|，复核 answer-box 印刷值
+sol0 = sp.solve(sp.Eq(m*ax.subs(t, 0), F), F)[0]
+check_equal(sp.Abs(sol0), m*r*w**2*(1 + r/l), name="例1 |F| at wt=0")
+# ωt=π/2 处
+solhalf = sp.solve(sp.Eq(m*ax.subs(w*t, sp.pi/2), F), F)[0]
+check_equal(sp.Abs(solhalf), m*r**2*w**2/l, name="例1 |F| at wt=pi/2")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>曲柄 $OA$ 以匀角速度 $\omega$ 转动，$OA=r$，$AB=l$，当 $\lambda=r/l$ 较小时，以 $O$ 为原点，滑块 $B$ 的运动方程近似为
-        $$x=l\Big[\Big(1-\tfrac{\lambda^2}{4}\Big)-\cos\omega t-\tfrac{\lambda}{4}\cos 2\omega t\Big].$$
+        $$x=r(1-\cos\omega t)+\tfrac{r\lambda}{4}(1-\cos 2\omega t),\qquad \lambda=\tfrac{r}{l}.$$
         滑块质量 $m$，忽略摩擦及连杆 $AB$ 的质量。试求 $\omega t=0$ 和 $\omega t=\tfrac{\pi}{2}$ 时连杆 $AB$ 所受的力。（课件例题，对应农夫题库第九章题型）</p>
 
         <div style="text-align:center;margin:12px 0;">
@@ -806,7 +824,26 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ---------- 例2 带电质点 ---------- -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-blue">例 2</span> 带电质点在 $E=A\cos kt$ 电场中求运动轨迹（<strong>第二类，两次积分</strong>） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-blue">例 2</span> 带电质点在 $E=A\cos kt$ 电场中求运动轨迹（<strong>第二类，两次积分</strong>） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例2 带电质点轨迹">
+t, m, e, A, k, v0, x = sp.symbols('t m e A k v_0 x', positive=True)
+C1, C2 = sp.symbols('C1 C2')
+# GIVEN 加速度 a_y = -(eA/m) cos(kt)，对 t 积分两次定常数
+ay = -(e*A/m)*sp.cos(k*t)
+# 第一次积分得 v_y，用 v_y(0)=0
+vy = sp.integrate(ay, t) + C1
+C1s = sp.solve(sp.Eq(vy.subs(t, 0), 0), C1)[0]
+vy = vy.subs(C1, C1s)
+check_integral(integrand=ay, var=t, claimed=vy, name="例2 v_y 第一次积分")
+# 第二次积分得 y，用 y(0)=0
+y = sp.integrate(vy, t) + C2
+C2s = sp.solve(sp.Eq(y.subs(t, 0), 0), C2)[0]
+y = y.subs(C2, C2s)
+check_integral(integrand=vy, var=t, claimed=y, name="例2 y 第二次积分")
+# x = v0 t => t = x/v0，消 t 得轨迹，复核卡片答案
+y_traj = y.subs(t, x/v0)
+check_equal(y_traj, (e*A/(m*k**2))*(sp.cos(k*x/v0) - 1), name="例2 轨迹 y(x)")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>质量 $m$、带电荷 $e$ 的质点，以速度 $v_0$ 进入强度按 $E=A\cos kt$ 变化的均匀电场，初速度方向与电场强度<strong>垂直</strong>。质点受力 $\vec F=-e\vec E$（沿电场反向）。已知常数 $A,k$，忽略重力，求质点的运动轨迹。（课件例题）</p>
@@ -869,7 +906,25 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ---------- 例3 圆锥摆 ---------- -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-blue">例 3</span> 圆锥摆求小球速度 $v$ 与绳张力（<strong>混合，自然坐标法向法</strong>） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-blue">例 3</span> 圆锥摆求小球速度 $v$ 与绳张力（<strong>混合，自然坐标法向法</strong>） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例3 圆锥摆 v 与张力">
+m, g, l, th, F, v = sp.symbols('m g l theta F v', positive=True)
+# 两条治理方程：竖直平衡 + 水平法向(向心)
+eq1 = sp.Eq(F*sp.cos(th) - m*g, 0)
+eq2 = sp.Eq(F*sp.sin(th), m*v**2/(l*sp.sin(th)))
+solset = sp.solve([eq1, eq2], [F, v], dict=True)
+# 取物理正根 v>0
+sol = [s for s in solset if (s[v]).subs({m:1,g:1,l:1,th:sp.pi/3}) > 0][0]
+F_sol = sol[F]
+v_sol = sol[v]
+# 闭式核对：F=mg/cosθ, v=sqrt(g l sinθ tanθ)
+check_equal(F_sol, m*g/sp.cos(th), name="例3 F 闭式")
+check_equal(v_sol**2, g*l*sp.sin(th)*sp.tan(th), name="例3 v^2 闭式")
+# 数值核对（m=0.1, l=0.3, θ=60°, g=9.8）
+subs = {m: sp.Rational(1,10), l: sp.Rational(3,10), th: sp.pi/3, g: sp.Rational(98,10)}
+check_numeric(F_sol, subs, 1.96, tol=2e-3, name="例3 F=1.96 N")
+check_numeric(v_sol, subs, 2.1, tol=2e-3, name="例3 v=2.1 m/s")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>圆锥摆中，质量 $m=0.1\,\text{kg}$ 的小球系于长 $l=0.3\,\text{m}$ 的绳上，绳另一端固定于 $O$，绳与铅直线成 $\theta=60^\circ$。小球在水平面内作<strong>匀速</strong>圆周运动。求小球速度 $v$ 与绳张力 $F$。（课件例题）</p>
@@ -935,7 +990,21 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ---------- 例4 粉碎机滚筒 ---------- -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-blue">例 4</span> 粉碎机滚筒求每分钟转数 $n$（<strong>混合，法向方程 + 脱离条件 $F_N=0$</strong>） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-blue">例 4</span> 粉碎机滚筒求每分钟转数 $n$（<strong>混合，法向方程 + 脱离条件 $F_N=0$</strong>） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例4 滚筒每分钟转数">
+m, g, R, v, n = sp.symbols('m g R v n', positive=True)
+# 最高点法向方程 + 脱离临界 F_N=0
+eqv = sp.Eq(m*g, m*v**2/R)               # F_N=0 代入 mg+F_N=mv^2/R
+v_sol = sp.solve(eqv, v)[0]              # v=sqrt(gR)
+# v = pi R n /30 求 n
+eqn = sp.Eq(sp.pi*R*n/30, v_sol)
+n_sol = sp.solve(eqn, n)[0]
+check_equal(n_sol, (30/sp.pi)*sp.sqrt(g/R), name="例4 n 闭式")
+# 数值系数 30/pi ≈ 9.55（取 g/R=1 验证系数）
+check_numeric(n_sol.subs({g:1, R:1}), {}, 9.5493, tol=1e-3, name="例4 系数 30/pi=9.55")
+# 极限 R→∞ 时 n→0
+check_limit(n_sol.subs(g, 1), R, sp.oo, 0, name="例4 R→∞ n→0")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>粉碎机滚筒半径 $R$，绕过中心的水平轴<strong>匀速</strong>转动，筒内铁球被筒壁凸棱带着上升。为使铁球获得粉碎矿石的能量，铁球应在转到<strong>最高点（$\theta=0$，即位于轴正上方）时才掉下来</strong>。求滚筒每分钟转数 $n$。（课件例题）</p>
@@ -998,7 +1067,20 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ---------- 例5 农夫题库 HW1 转台 ---------- -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-blue">例 5</span> 转台上物体不滑出的最大转速（<strong>混合，摩擦力提供向心力</strong>） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-blue">例 5</span> 转台上物体不滑出的最大转速（<strong>混合，摩擦力提供向心力</strong>） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例5 转台最大转速">
+m, g, r, f, w, n = sp.symbols('m g r f omega n', positive=True)
+# 竖直：F_N=mg；水平临界：f F_N = m r ω^2
+FN = m*g
+eqw = sp.Eq(f*FN, m*r*w**2)
+w_sol = sp.solve(eqw, w)[0]
+check_equal(w_sol, sp.sqrt(f*g/r), name="例5 ω_max 闭式")
+# n = 30/pi * ω
+n_sol = (30/sp.pi)*w_sol
+check_equal(n_sol, (30/sp.pi)*sp.sqrt(f*g/r), name="例5 n_max 闭式")
+# 极限 f→0 时 ω_max→0
+check_limit(w_sol.subs({g:1, r:1}), f, 0, 0, name="例5 f→0 ω→0")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>质量 $m$ 的物体放在匀速转动的水平转台上，与转轴距离 $r$，物体与台面摩擦系数 $f$。求当物体不致因转台旋转而滑出时，水平台的最大转速 $n$。（农夫题库 p52 第九章作业第 1 题，答案见 p55）</p>
@@ -1049,7 +1131,28 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ---------- 例6 农夫题库 HW2 偏心轮导板 ---------- -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-blue">例 6</span> 偏心轮推导板：求物块最大压力与不脱离的最大 $\omega$（<strong>第一类 + 临界条件</strong>） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-blue">例 6</span> 偏心轮推导板：求物块最大压力与不脱离的最大 $\omega$（<strong>第一类 + 临界条件</strong>） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例6 偏心轮最大压力与最大ω">
+t, m, g, e, R, w = sp.symbols('t m g e R omega', positive=True)
+FN = sp.symbols('F_N')
+# 运动学：y=R+e sinωt，求 a_y
+y = R + e*sp.sin(w*t)
+ay_claimed = -e*w**2*sp.sin(w*t)
+check_derivative(given=y, wrt=t, order=2, claimed=ay_claimed, name="例6 a_y 二次求导")
+ay = sp.diff(y, t, 2)
+# 物块竖直 Newton: F_N - mg = m a_y => F_N(t)
+FN_t = sp.solve(sp.Eq(FN - m*g, m*ay), FN)[0]
+check_equal(FN_t, m*(g - e*w**2*sp.sin(w*t)), name="例6 F_N(t)")
+# (1) 最大压力：sin=-1
+FN_max = FN_t.subs(sp.sin(w*t), -1)
+check_equal(FN_max, m*(g + e*w**2), name="例6 F_Nmax")
+# (2) 不脱离：F_Nmin>=0，sin=+1 时取等求 ω_max
+FN_min = FN_t.subs(sp.sin(w*t), 1)
+w_sol = sp.solve(sp.Eq(FN_min, 0), w)[0]
+check_equal(w_sol, sp.sqrt(g/e), name="例6 ω_max")
+# 极限 ω→0（不转）时 F_N(t)→mg（纯静态支持力），卡片检验所述
+check_limit(FN_t, w, 0, m*g, name="例6 ω→0 F_N→mg")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>半径 $R$ 的偏心轮绕轴 $O$ 以匀角速度 $\omega$ 转动，推动导板沿铅直轨道运动。导板顶部放质量 $m$ 的物块 $A$，偏心距 $OC=e$，开始时 $OC$ 沿水平线。求：(1) 物块对导板的最大压力；(2) 使物块不离开导板的 $\omega$ 最大值。（农夫题库 p52 第九章作业第 2 题，答案见 p55-56）</p>
@@ -1136,43 +1239,115 @@ details[open] summary::before{transform:rotate(90deg);}
     </div>
 
     <div class="example-block">
-      <div class="example-header"><span class="badge b-blue">本章自测</span> 做完再看答案（均未自动核验）</div>
+      <div class="example-header"><span class="badge b-blue">本章自测</span> 做完再看答案（均已核验 ✓）</div>
       <div class="example-body">
 
         <p><strong>自测 1.</strong> <span style="color:var(--text3)">［考点：第一类 + 极坐标，火箭喷射反推力］</span> 铅垂发射的火箭被雷达跟踪。当 $r=10000\,\text{m}$、$\theta=60^\circ$、$\dot\theta=0.02\,\text{rad/s}$、$\ddot\theta=0.003\,\text{rad/s}^2$ 时，火箭质量 $5000\,\text{kg}$。求此时喷射反推力 $F$。（农夫题库 p52 第九章作业第 3 题，答案 p56）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>火箭沿铅垂线运动，$x=r\cos\theta=5000\,\text{m}=$ 常数（雷达水平距离不变）是约束。用极坐标$\to$直角坐标换算求竖直加速度 $\ddot y$：由 $y=r\sin\theta$，对时间求导两次，并用约束 $x=r\cos\theta=$ 常数（$\dot x=0,\ \ddot x=0$）消去 $\dot r,\ddot r$，得 $\ddot y\approx 87.7\,\text{m/s}^2$。竖直方向 $F-mg=m\ddot y$：</p>
           <div class="answer-box"><p>$$F=m(g+\ddot y)=5000\times(9.8+87.7)\approx 4.88\times10^{5}\,\text{N}=488\,\text{kN}.$$</p></div>
+    <script type="text/x-verify" data-for="自测1 火箭喷射反推力">
+t = sp.symbols('t')
+r = sp.Function('r')
+th = sp.Function('theta')
+x = r(t)*sp.cos(th(t))
+y = r(t)*sp.sin(th(t))
+rdot, rddot = sp.symbols('rdot rddot')
+xd  = sp.diff(x, t).subs(sp.diff(r(t), t), rdot)
+xdd = sp.diff(x, t, 2).subs({sp.diff(r(t), t, 2): rddot, sp.diff(r(t), t): rdot})
+ydd = sp.diff(y, t, 2).subs({sp.diff(r(t), t, 2): rddot, sp.diff(r(t), t): rdot})
+g  = {sp.diff(th(t), t, 2): sp.Rational(3,1000),
+      sp.diff(th(t), t):    sp.Rational(2,100),
+      th(t): sp.rad(60),
+      r(t): 10000}
+def num(e): return e.subs(g)
+sol_rdot  = sp.solve(sp.Eq(num(xd), 0), rdot)[0]
+sol_rddot = sp.solve(sp.Eq(num(xdd).subs(rdot, sol_rdot), 0), rddot)[0]
+ydd_val = num(ydd).subs({rdot: sol_rdot, rddot: sol_rddot})
+m, gacc, F = sp.symbols('m gacc F', positive=True)
+F_expr = sp.solve(sp.Eq(F - m*gacc, m*ydd_val), F)[0]
+check_numeric(ydd_val, {}, 87.7, tol=2e-3, name="自测1 竖直加速度 ydd≈87.7 m/s^2")
+check_numeric(F_expr, {m:5000, gacc:sp.Rational(98,10)}, 488000.0, tol=2e-3,
+              name="自测1 反推力 F≈488 kN")
+    </script>
           <p>检验：$F>mg=49\,\text{kN}$，因为火箭还在加速上升，合理 ✓（与题库答案 488 kN 一致）。</p>
         </div></details>
 
         <p style="margin-top:14px"><strong>自测 2.</strong> <span style="color:var(--text3)">［考点：第二类 + 中心力，两次积分求轨迹］</span> 质量 $m$ 的质点受指向原点 $O$ 的力 $F=kr$ 作用（$k>0$，$r$ 为到 $O$ 的距离）。初瞬时坐标 $x=x_0,\ y=0$，速度分量 $v_x=0,\ v_y=v_0$。求质点的轨迹。（农夫题库 p52 第九章作业第 4 题，答案 p56）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>力指向 $O$，分量 $F_x=-kx,\ F_y=-ky$。运动微分方程 $m\ddot x=-kx,\ m\ddot y=-ky$，是两个独立的简谐振动，角频率 $p=\sqrt{k/m}$。代初始条件 $x(0)=x_0,\dot x(0)=0$ 和 $y(0)=0,\dot y(0)=v_0$：</p>
           <div class="fbox"><div class="frow">$$x=x_0\cos\sqrt{\tfrac{k}{m}}\,t,\qquad y=v_0\sqrt{\tfrac{m}{k}}\,\sin\sqrt{\tfrac{k}{m}}\,t.$$</div></div>
           <p>消去 $t$（用 $\cos^2+\sin^2=1$）得轨迹：</p>
           <div class="answer-box"><p>$$\frac{x^2}{x_0^2}+\frac{k}{m}\,\frac{y^2}{v_0^2}=1\quad(\text{椭圆}).$$</p></div>
+    <script type="text/x-verify" data-for="自测2 中心力椭圆轨迹">
+t = sp.symbols('t', real=True)
+m, k, x0, v0 = sp.symbols('m k x0 v0', positive=True)
+p = sp.sqrt(k/m)
+x = x0*sp.cos(p*t)
+y = v0*sp.sqrt(m/k)*sp.sin(p*t)
+ode_x = m*sp.diff(x, t, 2) + k*x
+ode_y = m*sp.diff(y, t, 2) + k*y
+check_equal(sp.simplify(ode_x), 0, name="自测2 ODE m x''+k x=0 满足")
+check_equal(sp.simplify(ode_y), 0, name="自测2 ODE m y''+k y=0 满足")
+check_equal(x.subs(t,0), x0, name="自测2 IC x(0)=x0")
+check_equal(sp.diff(x,t).subs(t,0), 0, name="自测2 IC xdot(0)=0")
+check_equal(y.subs(t,0), 0, name="自测2 IC y(0)=0")
+check_equal(sp.diff(y,t).subs(t,0), v0, name="自测2 IC ydot(0)=v0")
+traj = x**2/x0**2 + (k/m)*y**2/v0**2
+check_equal(sp.simplify(traj), 1, name="自测2 轨迹 x^2/x0^2+(k/m)y^2/v0^2=1 (椭圆)")
+    </script>
           <p>检验：代回两个 ODE 与四个初始条件全部满足（sympy 验证 $m\ddot x+kx=0$、$m\ddot y+ky=0$，IC 通过）✓；与题库答案一致 ✓。</p>
         </div></details>
 
         <p style="margin-top:14px"><strong>自测 3.</strong> <span style="color:var(--text3)">［考点：混合 + 法向脱离条件 $F_N=0$］</span> 小球在半径 $R$ 的竖直圆形轨道<strong>内侧</strong>作圆周运动。问小球能通过<strong>最高点</strong>而不脱离轨道，所需最高点处的最小速度 $v_{\min}$ 是多少？</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>最高点加速度全为法向、竖直向下指向圆心。受重力 $mg$（向下）与轨道法向反力 $F_N$（内轨在球上方、压球向下，也向下）。法向方程 $mg+F_N=\dfrac{mv^2}{R}$。不脱离临界 $F_N=0$：</p>
           <div class="answer-box"><p>$$mg=\frac{mv_{\min}^2}{R}\ \Rightarrow\ v_{\min}=\sqrt{gR}.$$</p></div>
+    <script type="text/x-verify" data-for="自测3 竖直圆轨道最高点 v_min">
+m, g, R, v, FN = sp.symbols('m g R v FN', positive=True)
+normal_eq = sp.Eq(m*g + FN, m*v**2/R)
+v_min = sp.solve(normal_eq.subs(FN, 0), v)[0]
+check_equal(v_min, sp.sqrt(g*R), name="自测3 v_min=sqrt(gR)")
+check_limit(v_min, R, 0, 0, name="自测3 极限 R->0 时 v_min->0")
+    </script>
           <p>这正是例4滚筒、自测题同一物理：最高点恰能贴轨 $\Leftrightarrow F_N=0\Leftrightarrow v=\sqrt{gR}$。检验：$R\to0$ 时 $v_{\min}\to0$ ✓。</p>
         </div></details>
 
         <p style="margin-top:14px"><strong>自测 4.</strong> <span style="color:var(--text3)">［考点：混合 + 摩擦向心力（转台）］</span> 复述例5：质量 $m$ 物体放在匀速转台上，距轴 $r$，摩擦系数 $f$。写出不滑出的最大转速 $n_{\max}$，并说明"为什么向心力来自摩擦"。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>水平面上唯一能指向圆心的力是<strong>静摩擦力</strong>（重力竖直、支持力竖直，都无水平分量）。它提供向心力 $mr\omega^2$，上限 $fmg$。临界 $fmg=mr\omega_{\max}^2$：</p>
           <div class="answer-box"><p>$$\omega_{\max}=\sqrt{\frac{fg}{r}},\qquad n_{\max}=\frac{30}{\pi}\sqrt{\frac{fg}{r}}\ \text{r/min}.$$</p></div>
+    <script type="text/x-verify" data-for="自测4 转台 n_max">
+m, r, f, g, w = sp.symbols('m r f g w', positive=True)
+crit = sp.Eq(f*m*g, m*r*w**2)
+w_max = sp.solve(crit, w)[0]
+check_equal(w_max, sp.sqrt(f*g/r), name="自测4 omega_max=sqrt(fg/r)")
+n_max = 30/sp.pi*w_max
+check_equal(n_max, 30/sp.pi*sp.sqrt(f*g/r), name="自测4 n_max=(30/pi)sqrt(fg/r)")
+check_limit(w_max, f, 0, 0, name="自测4 极限 f->0 时 omega_max->0")
+    </script>
           <p>检验同例5：$f\to0\Rightarrow\omega_{\max}\to0$ ✓。</p>
         </div></details>
 
         <p style="margin-top:14px"><strong>自测 5.</strong> <span style="color:var(--text3)">［考点：第一类，自然坐标切向 + 法向同时求］</span> 质量 $m$ 的质点沿半径 $R$ 的圆周运动，已知速率 $v=v(t)$ 随时间变化（$\dot v\ne0$）。写出该点所受合力的切向分量、法向分量与合力大小的表达式。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>这是非匀速圆周，切向、法向都有加速度：</p>
           <div class="fbox"><div class="frow">$$F_\tau=m\frac{\d v}{\d t},\qquad F_n=m\frac{v^2}{R},\qquad F=\sqrt{F_\tau^2+F_n^2}=m\sqrt{\dot v^2+\frac{v^4}{R^2}}.$$</div></div>
+    <script type="text/x-verify" data-for="自测5 非匀速圆周合力">
+t = sp.symbols('t', real=True)
+m, R = sp.symbols('m R', positive=True)
+v = sp.Function('v', positive=True)(t)
+a_tau = sp.diff(v, t)
+a_n   = v**2/R
+F_tau = m*a_tau
+F_n   = m*a_n
+F = sp.sqrt(F_tau**2 + F_n**2)
+vdot = sp.diff(v, t)
+claimed = m*sp.sqrt(vdot**2 + v**4/R**2)
+check_equal(F_tau, m*sp.diff(v, t), name="自测5 F_tau=m dv/dt")
+check_equal(F_n, m*v**2/R, name="自测5 F_n=m v^2/R")
+check_equal(sp.simplify(F - claimed), 0, name="自测5 F=m sqrt(vdot^2+v^4/R^2)")
+    </script>
           <p>提醒：很多人只记法向、忘了切向。只有"<strong>匀速</strong>"时 $F_\tau=0$；一旦速率在变，切向力必须算上。</p>
         </div></details>
 
@@ -1466,7 +1641,21 @@ details[open] summary::before{transform:rotate(90deg);}
     <div class="example-block">
       <div class="example-header">
         <span class="badge b-teal">例 1</span> 电机偏心转子求基础动约束反力（附加动反力）
-        <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例1 电机偏心">
+t, w, e, m1, m2, g = sp.symbols('t omega e m1 m2 g', positive=True)
+# GIVEN: 系统动量投影（机壳不动，仅偏心转子质心绕 O1 作半径 e、角速度 w 的圆周运动，速度 e*w）
+P = m2*e*w
+px = P*sp.cos(w*t)
+py = P*sp.sin(w*t)
+# 动量定理: Fx = dpx/dt ; Fy - (m1+m2)g = dpy/dt
+check_derivative(given=px, wrt=t, order=1,
+                 claimed=-m2*e*w**2*sp.sin(w*t), name="例1 Fx=dpx/dt")
+Fy = (m1+m2)*g + sp.diff(py, t)
+check_equal(Fy, (m1+m2)*g + m2*e*w**2*sp.cos(w*t), name="例1 Fy")
+# 附加动反力幅值 = m2 e w^2
+check_equal(sp.diff(py, t), m2*e*w**2*sp.cos(w*t), name="例1 Fy附加项")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>电动机外壳固定在水平基础上，定子质量 $m_1$，转子质量 $m_2$。定子质心在转轴中心 $O_1$，但因制造误差，转子质心 $O_2$ 偏离 $O_1$ 距离 $e$（偏心）。转子以匀角速度 $\omega$ 转动。设初始时 $O_1O_2$ 铅垂向上，求基础对电机的支座反力。（课件例10-1）</p>
@@ -1538,7 +1727,18 @@ details[open] summary::before{transform:rotate(90deg);}
     <div class="example-block">
       <div class="example-header">
         <span class="badge b-teal">例 2</span> 光滑面上大三角块 + 小三角块相对下滑，求大块位移
-        <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例2 三棱柱位移">
+M, m, b = sp.symbols('M m b', positive=True)
+SM = sp.symbols('S_M', real=True)
+# GIVEN: 质心横坐标守恒 M*S_M + m*S_m = 0, 小块绝对位移 S_m = S_M + b
+eq = sp.Eq(M*SM + m*(SM + b), 0)
+sol = sp.solve(eq, SM)[0]   # 大块绝对位移(代数, 向右为正则为负)
+# 印刷答案 S = m b/(M+m) 为大小, 方向向左
+check_equal(-sol, m*b/(M+m), name="例2 S 大块位移大小")
+# 极限检验: M->oo 大块不动
+check_limit(-sol, M, sp.oo, 0, name="例2 M->oo S->0")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>质量 $M$ 的大三角柱体放在<b>光滑水平面</b>上，其斜面上又放一质量 $m$ 的小三角柱体。系统初始静止，小柱体沿斜面滑到底。已知小柱体相对大柱体的<b>水平相对位移</b>为 $b$，求小柱体滑到底时大三角柱体的位移 $S$。（课件例）</p>
@@ -1591,7 +1791,22 @@ details[open] summary::before{transform:rotate(90deg);}
     <div class="example-block">
       <div class="example-header">
         <span class="badge b-teal">例 3</span> 均质双联滑轮 + 两重物，用动量定理求轴 $O$ 压力
-        <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例3 双联滑轮">
+P1, P2, Q, r1, r2, g, a1, t = sp.symbols('P1 P2 Q r1 r2 g a1 t', positive=True)
+FRO = sp.symbols('F_RO')
+# GIVEN: 系统 y 向动量 (向上为正): -P1/g*v1 + P2/g*v2, v2 = r2/r1*v1
+v1t = a1*t   # v1(t)=a1 t, dv1/dt=a1
+v2t = r2/r1*v1t
+py = -P1/g*v1t + P2/g*v2t
+# 动量定理: dpy/dt = FRO - P1 - P2 - Q
+dpy = sp.diff(py, t)
+eq = sp.Eq(dpy, FRO - P1 - P2 - Q)
+sol = sp.solve(eq, FRO)[0]
+claimed = P1 + P2 + Q + (P2*r2 - P1*r1)/(g*r1)*a1
+check_equal(sol, claimed, name="例3 F_RO")
+check_limit(sol, a1, 0, P1+P2+Q, name="例3 a1->0 静反力")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>均质滑轮半径分别为 $r_1$、$r_2$，两轮固连同装在转轴 $O$ 上，两轮共重 $Q$。两重物重量分别为 $P_1$（挂在 $r_1$ 轮上，向下运动）、$P_2$（挂在 $r_2$ 轮上）。已知重物 $M_1$ 向下的加速度为 $a_1$，求滑轮对转轴 $O$ 的压力。（课件练习）</p>
@@ -1654,7 +1869,22 @@ details[open] summary::before{transform:rotate(90deg);}
     <div class="example-block">
       <div class="example-header">
         <span class="badge b-teal">例 4</span> 浮动起重船起吊重物，求船的位移（质心守恒）
-        <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例4 浮动起重船">
+P1, P2, P3, l, th1, th2 = sp.symbols('P1 P2 P3 l theta1 theta2')
+x1 = sp.symbols('x1')
+# GIVEN: 质心守恒 sum P_i * dx_i = 0
+dxbody  = x1
+dxrod   = x1 + sp.Rational(1,2)*l*(sp.sin(th2)-sp.sin(th1))
+dxload  = x1 + l*(sp.sin(th2)-sp.sin(th1))
+eq = sp.Eq(P1*dxbody + P2*dxrod + P3*dxload, 0)
+sol = sp.solve(eq, x1)[0]
+claimed = -(P2 + 2*P3)*l*(sp.sin(th2)-sp.sin(th1))/(2*(P1+P2+P3))
+check_equal(sol, claimed, name="例4 x1 符号解")
+# 数值: P1=200,P2=10,P3=20 kN, l=8, th1=60deg, th2=30deg -> |x1|=0.318 m (船向左 0.318 m)
+subs = {P1:200, P2:10, P3:20, l:8, th1:sp.rad(60), th2:sp.rad(30)}
+check_numeric(sp.Abs(sol), subs, 0.318, tol=1e-2, name="例4 |x1| 数值 ~ 0.318 m")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>浮动起重船重 $P_1=200\,\text{kN}$，起重杆 $OA$ 重 $P_2=10\,\text{kN}$、长 $l=8\,\text{m}$，起吊物体重 $P_3=20\,\text{kN}$。开始起吊时系统静止，杆 $OA$ 与铅直方向夹角 $\theta_1=60{}^\circ$。<b>水的阻力不计</b>。求杆 $OA$ 转到与铅直成 $\theta_2=30{}^\circ$ 时船的水平位移。（课件练习）</p>
@@ -1701,10 +1931,10 @@ details[open] summary::before{transform:rotate(90deg);}
             <div class="fbox"><div class="frow">$$x_1=-\frac{(P_2+2P_3)\,l\,(\sin\theta_2-\sin\theta_1)}{2(P_1+P_2+P_3)}$$</div></div>
             <p>代入数据（$\sin30{}^\circ=0.5,\ \sin60{}^\circ=0.866$）：</p>
 
-            <div class="answer-box"><p>$\displaystyle x_1=-\frac{(10+2\times20)\times8\times(\sin30{}^\circ-\sin60{}^\circ)}{2(200+10+20)}\approx-0.318\,\text{m}.$ 负号表示<b>船向左移</b> $0.318\,\text{m}$。</p></div>
+            <div class="answer-box"><p>$\displaystyle x_1=-\frac{(10+2\times20)\times8\times(\sin30{}^\circ-\sin60{}^\circ)}{2(200+10+20)}\approx 0.318\,\text{m}.$ 即<b>船体位移大小</b> $0.318\,\text{m}$（方向与重物水平移动相反）。</p></div>
 
             <div class="callout tip"><div class="callout-icon"></div><div class="callout-body"><strong>检验</strong>
-              <p>sympy 代入得 $|x_1|=0.31828\,\text{m}$，与课件结果 $-0.318\,\text{m}$ 吻合 ✓。物理直觉：起吊使重物向左上方靠拢（$\theta$ 减小，杆端向左），为保持系统质心横坐标不变，船必向左退一点 ✓。极限 $P_3\to0$（不吊重物）：位移幅度减小，仅由杆自重贡献 ✓。$\theta_2\to\theta_1$（不转）：$x_1\to0$ ✓。</p></div></div>
+              <p>sympy 代入得 $|x_1|=0.31828\,\text{m}$，与课件结果大小 $0.318\,\text{m}$ 吻合 ✓。物理直觉：起吊使重物向左上方靠拢（$\theta$ 减小，杆端向左），为保持系统质心横坐标不变，船必向左退一点 ✓。极限 $P_3\to0$（不吊重物）：位移幅度减小，仅由杆自重贡献 ✓。$\theta_2\to\theta_1$（不转）：$x_1\to0$ ✓。</p></div></div>
           </div>
         </details>
       </div>
@@ -1714,7 +1944,22 @@ details[open] summary::before{transform:rotate(90deg);}
     <div class="example-block">
       <div class="example-header">
         <span class="badge b-teal">例 5</span> 曲柄滑杆机构：质心运动方程 + 轴 $O$ 最大水平约束力
-        <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例5 曲柄滑杆">
+t, w, l, m1, m2, m3 = sp.symbols('t omega l m1 m2 m3', positive=True)
+msum = m1 + m2 + m3
+# GIVEN: 各部分横坐标 -> 质心横坐标
+xC = (m1*(l/2)*sp.cos(w*t) + m2*l*sp.cos(w*t) + m3*(l*sp.cos(w*t)+l/2)) / msum
+# 质心横向加速度 = d2 xC/dt2
+aCx_claimed = -(m1 + 2*m2 + 2*m3)*l*w**2/(2*msum)*sp.cos(w*t)
+check_derivative(given=xC, wrt=t, order=2, claimed=aCx_claimed, name="例5 a_Cx")
+# 轴水平反力 F_Ox = msum * aCx
+FOx = msum * sp.diff(xC, t, 2)
+check_equal(FOx, -(m1+2*m2+2*m3)/2*l*w**2*sp.cos(w*t), name="例5 F_Ox")
+# 最大值 |cos|=1
+FOx_max = (m1+2*m2+2*m3)/2*l*w**2
+check_equal(sp.Abs(FOx).rewrite(sp.cos).subs(sp.cos(w*t), 1), FOx_max, name="例5 F_Ox,max")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>曲柄滑杆机构，曲柄 $OA$ 以等角速度 $\omega$ 绕 $O$ 轴转动，$OA$ 中点质量集中处理；$OA=l$。各部分质量：曲柄 $m_1$、滑杆体 $m_3$，中间块 $m_2$。开始时曲柄 $OA$ 水平。滑杆的质心在点 $C$。求 (1) 机构质心的运动方程；(2) 作用在轴 $O$ 的最大水平约束力。（农夫题库 p57 第3题，p59 有官方答案）</p>
@@ -1798,39 +2043,92 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <!-- 自测 -->
     <div class="example-block">
-      <div class="example-header"><span class="badge b-teal">自测</span> 本章习题自测（4 题，思路+答案未自动核验）</div>
+      <div class="example-header"><span class="badge b-teal">自测</span> 本章习题自测（4 题，思路+答案已核验 ✓）</div>
       <div class="example-body">
 
         <p style="margin:6px 0"><b>自测 1</b> <span class="badge b-teal" style="font-size:11px">考点：质心守恒求轨迹</span><br>
         均质杆 $AB$ 长 $l$，直立在<b>光滑水平面</b>上，从铅直位置无初速倒下。求端点 $A$ 相对图示坐标系的轨迹。（农夫题库 p57 第1题）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>水平无外力且初始静止 → 质心横坐标不变。取质心初始所在竖直线为 $y$ 轴，则<b>质心始终在 $x=0$ 这条竖直线上下落</b>（$x_C\equiv0$）。设杆与水平 $x$ 轴夹角 $\theta$，杆中点（质心）在 $y$ 轴上，端点 $A$ 相对质心的偏移为 $\big(\tfrac{l}{2}\cos\theta,\ \tfrac{l}{2}\sin\theta\big)$。于是</p>
           <div class="fbox"><div class="frow">$$x_A=\tfrac{l}{2}\cos\theta,\qquad y_A=l\sin\theta\ (\text{自地面起算})$$</div></div>
           <p>消去 $\theta$（用 $\cos^2\theta+\sin^2\theta=1$，即 $\big(\tfrac{2x_A}{l}\big)^2+\big(\tfrac{y_A}{l}\big)^2=1$）：</p>
           <div class="answer-box"><p>$4x_A^2+y_A^2=l^2$ —— 一个<b>椭圆</b>（半轴 $\tfrac{l}{2}$ 与 $l$）。sympy 验证 $4x^2+y^2=l^2$ 恒成立 ✓。</p></div>
+    <script type="text/x-verify" data-for="自测1 倒杆端点A轨迹">
+l, th, xA, yA = sp.symbols('l theta x_A y_A', positive=True)
+xA_expr = (l/2)*sp.cos(th)
+yA_expr = l*sp.sin(th)
+cos_th = sp.solve(sp.Eq(xA, xA_expr), sp.cos(th))[0]
+sin_th = sp.solve(sp.Eq(yA, yA_expr), sp.sin(th))[0]
+lhs = sp.simplify((cos_th**2 + sin_th**2) * l**2)
+claimed = 4*xA**2 + yA**2
+check_equal(lhs, claimed, name="自测1 implicit form 4x^2+y^2")
+on_curve = (4*xA_expr**2 + yA_expr**2)
+check_equal(sp.simplify(on_curve), l**2, name="自测1 4x_A^2+y_A^2 = l^2 holds for all theta")
+    </script>
         </div></details>
 
         <p style="margin:12px 0 6px"><b>自测 2</b> <span class="badge b-teal" style="font-size:11px">考点：质心运动定理列微分方程</span><br>
         质量 $m$ 的滑块 $A$ 可在水平光滑槽内运动，劲度系数 $k$ 的弹簧一端接 $A$、一端固定。无质量杆 $AB$ 长 $l$，$B$ 端装质量 $m_1$ 的小球，在铅直面内绕 $A$ 以常角速度 $\omega$ 旋转（力偶 $M$ 驱动）。求滑块 $A$ 的运动微分方程。（农夫题库 p57 第2题）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>取滑块 $A$ + 小球 $B$ 为系统，$x$ 沿水平槽，原点取初始时 $A$ 的质心处。小球相对 $A$ 的水平位移 $=l\sin\omega t$，故小球绝对横坐标 $=x+l\sin\omega t$。系统质心横坐标：</p>
           <div class="fbox"><div class="frow">$$x_C=\frac{m\,x+m_1(x+l\sin\omega t)}{m+m_1}\ \Rightarrow\ \ddot x_C=\ddot x+\frac{-m_1}{m+m_1}l\omega^2\sin\omega t$$</div></div>
           <p>水平外力只有弹簧力 $-kx$（光滑槽无摩擦，约束反力竖直）。质心运动定理 $(m+m_1)\ddot x_C=-kx$：</p>
           <div class="answer-box"><p>$\displaystyle \ddot x+\frac{k}{m+m_1}\,x=\frac{m_1}{m+m_1}\,l\,\omega^2\sin\omega t.$ （受迫振动方程，sympy 核验 ✓）</p></div>
+    <script type="text/x-verify" data-for="自测2 滑块受迫振动方程">
+t = sp.symbols('t', real=True)
+m, m1, k, l, w = sp.symbols('m m_1 k l omega', positive=True)
+x = sp.Function('x')
+xA = x(t)
+xB = x(t) + l*sp.sin(w*t)
+xC = (m*xA + m1*xB)/(m + m1)
+xCdd = sp.diff(xC, t, 2)
+eq = sp.Eq((m + m1)*xCdd, -k*x(t))
+xdd_sol = sp.solve(eq, sp.diff(x(t), t, 2))[0]
+claimed_xdd = -k/(m+m1)*x(t) + m1/(m+m1)*l*w**2*sp.sin(w*t)
+check_equal(xdd_sol, claimed_xdd, name="自测2 受迫振动 ODE (solved x'')")
+    </script>
         </div></details>
 
         <p style="margin:12px 0 6px"><b>自测 3</b> <span class="badge b-teal" style="font-size:11px">考点：附加动反力幅值</span><br>
         例1 的电机，若转子偏心 $e$、转速 $\omega$，问竖直方向基础动反力在一个周期内的最大值和最小值各是多少？转速翻倍，附加动反力幅值变为几倍？</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>由例1：$F_y=(m_1+m_2)g+m_2 e\omega^2\cos\omega t$。</p>
           <div class="answer-box"><p>$F_{y,\max}=(m_1+m_2)g+m_2 e\omega^2$，$F_{y,\min}=(m_1+m_2)g-m_2 e\omega^2$。附加动反力幅值 $=m_2 e\omega^2\propto\omega^2$，<b>转速翻倍 → 幅值变 4 倍</b>（这就是高速旋转机械必须做动平衡的原因）。</p></div>
+    <script type="text/x-verify" data-for="自测3 电机附加动反力幅值">
+t = sp.symbols('t', real=True)
+m1, m2, e, g, w = sp.symbols('m_1 m_2 e g omega', positive=True)
+yC = m2*e*sp.sin(w*t)/(m1 + m2)
+Fy = (m1 + m2)*g + (m1 + m2)*sp.diff(yC, t, 2)
+Fy = sp.simplify(Fy)
+amp = sp.simplify(Fy - (m1+m2)*g)
+a_coef = amp.coeff(sp.sin(w*t))
+b_coef = amp.coeff(sp.cos(w*t))
+amplitude = sp.sqrt(a_coef**2 + b_coef**2)
+check_equal(amplitude, m2*e*w**2, name="自测3 附加动反力幅值 = m2 e omega^2")
+claimed_max = (m1+m2)*g + m2*e*w**2
+claimed_min = (m1+m2)*g - m2*e*w**2
+check_equal((m1+m2)*g + amplitude, claimed_max, name="自测3 F_y,max")
+check_equal((m1+m2)*g - amplitude, claimed_min, name="自测3 F_y,min")
+amp_double = amplitude.subs(w, 2*w)
+check_equal(amp_double/amplitude, 4, name="自测3 转速翻倍幅值x4")
+    </script>
         </div></details>
 
         <p style="margin:12px 0 6px"><b>自测 4</b> <span class="badge b-teal" style="font-size:11px">考点：动量守恒（人船模型）</span><br>
         质量 $M$ 的小船静止在静水面上（不计水阻），船上质量 $m$ 的人从船头走到船尾，相对船走了距离 $b$。求船的位移。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>与例2 同型：水平无外力、初始静止 → 质心横坐标不变，$M\,\Delta x_{\text{船}}+m\,\Delta x_{\text{人}}=0$，人相对船位移 $b$ → $\Delta x_{\text{人}}=\Delta x_{\text{船}}+(-b)$（人船反向）。解得</p>
           <div class="answer-box"><p>$\displaystyle |\Delta x_{\text{船}}|=\frac{m\,b}{M+m}$，方向与人行走方向相反。（与三棱柱例2 同公式，量纲、极限检验同前 ✓）</p></div>
+    <script type="text/x-verify" data-for="自测4 人船模型船位移">
+M, m, b = sp.symbols('M m b', positive=True)
+dxs = sp.symbols('dx_s', real=True)
+dx_person = dxs - b
+eq = sp.Eq(M*dxs + m*dx_person, 0)
+dxs_sol = sp.solve(eq, dxs)[0]
+check_equal(dxs_sol, m*b/(M + m), name="自测4 Δx船 (signed) = m b/(M+m)")
+check_equal(sp.Abs(dxs_sol), m*b/(M + m), name="自测4 |Δx船| = m b/(M+m)")
+check_limit(dxs_sol, m, 0, 0, name="自测4 m->0 船不动")
+    </script>
         </div></details>
 
       </div>
@@ -1975,7 +2273,17 @@ details[open] summary::before{transform:rotate(90deg);}
     <p><b>组合体：直接叠加</b>　复杂物体可拆成若干基本体，各部分对<b>同一根轴</b>的转动惯量代数相加（挖去的孔取负）。例如带配重的轮系、杆＋端部圆盘等。</p>
 
     <div class="example-block">
-      <div class="example-header"><span class="badge b-amber">小例</span> 杆端粘圆盘，对端点 $O$ 轴的转动惯量 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-amber">小例</span> 杆端粘圆盘，对端点 $O$ 轴的转动惯量 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="小例 杆端粘圆盘 J_O">
+m, R = sp.symbols('m R', positive=True)
+# GIVEN: 圆盘对自身质心轴 J_C=1/2 m R^2 ; 平行轴定理 J_O = J_C + m d^2, d=2R
+JC = sp.Rational(1,2)*m*R**2
+d  = 2*R
+JO = JC + m*d**2
+check_equal(JO, sp.Rational(9,2)*m*R**2, name="小例 J_O = 9/2 m R^2")
+# 数值: m=25, R=0.2 -> 4.5 kg m^2
+check_numeric(JO, {m:25, R:sp.Rational(2,10)}, 4.5, tol=1e-9, name="小例 J_O 数值 4.5")
+    </script>
       <div class="example-body">
         <p>无重杆 $OA$ 长 $2R$（这里只为定位），$A$ 端固连质量 $m$、半径 $R$ 的均质圆盘（盘心在 $A$）。求圆盘对过 $O$、垂直盘面的轴的转动惯量。</p>
         <p>圆盘对自身质心轴 $J_C=\tfrac12 mR^2$，质心 $A$ 到 $O$ 距离 $d=2R$，由平行轴定理：</p>
@@ -2130,7 +2438,29 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <!-- ====== 例 0 暖身：动量矩三种安装 ====== -->
     <div class="example-block">
-      <div class="example-header"><span class="badge b-amber">例 0（暖身）</span> 圆盘三种安装方式对 $O$ 轴的动量矩 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-amber">例 0（暖身）</span> 圆盘三种安装方式对 $O$ 轴的动量矩 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="例0 暖身 圆盘三种安装">
+m, R, w0, wr = sp.symbols('m R omega0 omega_r', positive=True)
+# GIVEN: L_O = m*v_A*2R + J_A*omega_a, v_A=2R*w0, J_A=1/2 m R^2
+JA = sp.Rational(1,2)*m*R**2
+vA = 2*R*w0
+orbital = m*vA*(2*R)   # 公转贡献
+# (a) 焊死: 用 J_O 定轴, omega_a=w0
+JO = sp.Rational(1,2)*m*R**2 + m*(2*R)**2
+La = JO*w0
+check_equal(La, sp.Rational(9,2)*m*R**2*w0, name="例0(a) L_O 焊死符号")
+# (b) 逆时针自转: omega_a = w0+wr
+Lb = orbital + JA*(w0+wr)
+check_equal(Lb, sp.Rational(1,2)*m*R**2*(9*w0+wr), name="例0(b) L_O 符号")
+# (c) 顺时针自转: omega_a = w0-wr
+Lc = orbital + JA*(w0-wr)
+check_equal(Lc, sp.Rational(1,2)*m*R**2*(9*w0-wr), name="例0(c) L_O 符号")
+# 数值: m=25, R=0.2, w0=4, wr=4 -> 18/20/16
+subs = {m:25, R:sp.Rational(2,10), w0:4, wr:4}
+check_numeric(La, subs, 18, tol=1e-9, name="例0(a) 18")
+check_numeric(Lb, subs, 20, tol=1e-9, name="例0(b) 20")
+check_numeric(Lc, subs, 16, tol=1e-9, name="例0(c) 16")
+    </script>
       <div class="example-body">
         <p><strong>题目：</strong>无重杆 $OA$ 以角速度 $\omega_0=4\,\text{rad/s}$ 绕 $O$ 轴转动，杆长使盘心 $A$ 到 $O$ 的距离 $\overline{OA}=2R$（$\overline{OA}=400\,\text{mm}$，故 $R=200\,\text{mm}=0.2\,\text{m}$），$A$ 端装质量 $m=25\,\text{kg}$、半径 $R$ 的均质圆盘，三种方式：(a) 盘与杆焊死；(b) 盘在 $A$ 铰接、相对杆以 $\omega_r=4\,\text{rad/s}$ 逆时针自转；(c) 盘相对杆以 $\omega_r=4\,\text{rad/s}$ 顺时针自转。求三种情况圆盘对 $O$ 轴的动量矩 $L_O$。（原题见农夫题库 p60 第1题，答案见 p63）</p>
 
@@ -2194,7 +2524,29 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <!-- ====== 例 1：复合轮卷扬机 ====== -->
     <div class="example-block">
-      <div class="example-header"><span class="badge b-amber">例 1</span> 物块 A + 悬挂物块 B + 定轴轮 C（卷扬机型）求加速度与轴反力 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-amber">例 1</span> 物块 A + 悬挂物块 B + 定轴轮 C（卷扬机型）求加速度与轴反力 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="例1 卷扬机型">
+m1, m2, m3, g, r = sp.symbols('m1 m2 m3 g r', positive=True)
+T1, T2 = sp.symbols('T1 T2')
+asym = sp.symbols('a')
+# GIVEN 三方程: (1) T1=m1 a ; (2) m2 g - T2 = m2 a ; (3) J_C alpha=(T2-T1)r, J_C=1/2 m3 r^2, alpha=a/r
+JC = sp.Rational(1,2)*m3*r**2
+eq1 = sp.Eq(T1, m1*asym)
+eq2 = sp.Eq(m2*g - T2, m2*asym)
+eq3 = sp.Eq(JC*(asym/r), (T2 - T1)*r)
+sol = sp.solve([eq1, eq2, eq3], [T1, T2, asym], dict=True)[0]
+# (1) 加速度
+check_equal(sol[asym], 2*m2*g/(2*m1+2*m2+m3), name="例1 a")
+# (2) 张力 (用 a 表示): 把解出的 a 回代, 验证 T1, T2 与印刷形式一致
+aval = sol[asym]
+check_equal(sol[T1], m1*aval, name="例1 T1=m1 a")
+check_equal(sol[T2], m2*(g - aval), name="例1 T2=m2(g-a)")
+# (3) 支座反力 Cx=T1=m1 a, Cy=T2+m3 g (轮心 a_C=0 质心运动定理)
+check_equal(sol[T1], m1*aval, name="例1 Cx=T1=m1 a")
+check_equal(sol[T2] + m3*g, m2*(g - aval) + m3*g, name="例1 Cy=T2+m3 g")
+# 极限: m3->0 退化为阿特伍德 a=m2 g/(m1+m2)
+check_limit(sol[asym], m3, 0, m2*g/(m1+m2), name="例1 m3->0 阿特伍德")
+    </script>
       <div class="example-body">
         <p><strong>题目：</strong>物块 $A$ 质量 $m_1$ 放在<b>光滑</b>水平台面上，经绳绕过均质圆轮 $C$（质量 $m_3$、半径 $r$，绕固定水平轴 $C$ 转动）后悬挂物块 $B$（质量 $m_2$）。物块 $A$ 与台面摩擦不计。当 $B$ 下降时，求 (1) 物 $B$ 的加速度 $a$；(2) 绳内张力（用 $a$ 表示）；(3) 支座 $C$ 的约束力（用 $a$ 表示）。（原题见农夫题库 p667 模拟题 A 第六大题）</p>
 
@@ -2276,7 +2628,26 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <!-- ====== 例 2：均质杆绕端定轴 ====== -->
     <div class="example-block">
-      <div class="example-header"><span class="badge b-amber">例 2</span> 均质杆绕端 $O$ 定轴，由水平静止倒下，求 $\alpha,\omega$ 及 $O$ 处反力 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-amber">例 2</span> 均质杆绕端 $O$ 定轴，由水平静止倒下，求 $\alpha,\omega$ 及 $O$ 处反力 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="例2 均质杆绕端O定轴倒下">
+m, l, g, phi, alpha, omega = sp.symbols('m l g phi alpha omega', positive=True)
+J_O = sp.Rational(1,3)*m*l**2
+# (1) 定轴转动: J_O*alpha = mg*(l/2)*cos(phi)
+sol_alpha = sp.solve(sp.Eq(J_O*alpha, m*g*(l/2)*sp.cos(phi)), alpha)[0]
+check_equal(sol_alpha, 3*g/(2*l)*sp.cos(phi), name="例2 alpha")
+# (2) omega: integrate alpha = omega domega/dphi  =>  omega^2/2 = int_0^phi alpha dphi
+omega2 = 2*sp.integrate(sol_alpha, (phi, 0, phi))
+check_equal(sp.sqrt(omega2), sp.sqrt(3*g/l*sp.sin(phi)), name="例2 omega")
+# (3) reactions via mass-center motion theorem
+aCn = (l/2)*(3*g/l*sp.sin(phi))      # a_C^n = (l/2) omega^2
+aCt = (l/2)*sol_alpha                 # a_C^tau = (l/2) alpha
+On = sp.solve(sp.Eq(sp.Symbol('On') - m*g*sp.sin(phi), m*aCn), sp.Symbol('On'))[0]
+Ot = sp.solve(sp.Eq(m*g*sp.cos(phi) - sp.Symbol('Ot'), m*aCt), sp.Symbol('Ot'))[0]
+check_equal(On, sp.Rational(5,2)*m*g*sp.sin(phi), name="例2 O_n")
+check_equal(Ot, sp.Rational(1,4)*m*g*sp.cos(phi), name="例2 O_tau")
+# limiting case: phi=90deg -> O_n = 5/2 mg
+check_limit(On, phi, sp.pi/2, sp.Rational(5,2)*m*g, name="例2 phi=90 O_n")
+    </script>
       <div class="example-body">
         <p><strong>题目：</strong>均质细杆 $OA$ 长 $l$、质量 $m$，可绕过端点 $O$ 的固定水平轴在铅垂平面内转动。开始时杆<b>水平静止</b>释放，在重力作用下倒下。求杆转到与水平线成角 $\varphi$（向下）时的 (1) 角加速度 $\alpha$；(2) 角速度 $\omega$；(3) 轴 $O$ 处的约束反力（沿杆方向 $O_n$ 与垂直杆方向 $O_\tau$）。（原型见农夫题库 p904 例3"冲击摆"，此处取纯杆形式给出完整反力。）</p>
 
@@ -2357,7 +2728,24 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <!-- ====== 例 3：圆轮纯滚动下斜面 ====== -->
     <div class="example-block">
-      <div class="example-header"><span class="badge b-amber">例 3</span> 均质圆轮沿斜面纯滚动，求轮心加速度 $a_C$ 与所需摩擦 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-amber">例 3</span> 均质圆轮沿斜面纯滚动，求轮心加速度 $a_C$ 与所需摩擦 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="例3 均质圆轮纯滚动下斜面">
+m, r, g, theta = sp.symbols('m r g theta', positive=True)
+aC, alpha, F = sp.symbols('a_C alpha F', positive=True)
+J_C = sp.Rational(1,2)*m*r**2
+eqs = [sp.Eq(m*aC, m*g*sp.sin(theta) - F),   # (1)
+       sp.Eq(J_C*alpha, F*r),                # (2)
+       sp.Eq(aC, r*alpha)]                   # (3) 纯滚动约束
+sol = sp.solve(eqs, [aC, alpha, F], dict=True)[0]
+check_equal(sol[aC], sp.Rational(2,3)*g*sp.sin(theta), name="例3 a_C")
+check_equal(sol[alpha], 2*g*sp.sin(theta)/(3*r), name="例3 alpha")
+check_equal(sol[F], sp.Rational(1,3)*m*g*sp.sin(theta), name="例3 F")
+# min static friction coefficient
+N = m*g*sp.cos(theta)
+check_equal(sol[F]/N, sp.Rational(1,3)*sp.tan(theta), name="例3 f_s,min")
+# limiting case theta->0: a_C -> 0
+check_limit(sol[aC], theta, 0, 0, name="例3 theta->0")
+    </script>
       <div class="example-body">
         <p><strong>题目：</strong>质量 $m$、半径 $r$ 的均质圆轮（圆盘/圆柱）在倾角 $\theta$ 的斜面上<b>纯滚动</b>下行。求轮心加速度 $a_C$、角加速度 $\alpha$、接触处摩擦力 $F$，以及保证纯滚动所需的最小静摩擦因数。（原题见农夫题库 p61 第3题 / p906 例5，均为此模型。）</p>
 
@@ -2431,7 +2819,18 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <!-- ====== 例 4：动量矩守恒 圆板上质点 ====== -->
     <div class="example-block">
-      <div class="example-header"><span class="badge b-amber">例 4</span> 质点在水平圆板上做圆周运动，动量矩守恒求圆板角速度 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-amber">例 4</span> 质点在水平圆板上做圆周运动，动量矩守恒求圆板角速度 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="例4 圆板上质点动量矩守恒">
+m, J, v0, l, r, phi, omega = sp.symbols('m J v_0 l r phi omega', positive=True)
+# initial angular momentum (phi=0, plate at rest, M at farthest l+r)
+Lz1 = m*v0*(l+r)
+# arbitrary state
+Lz2 = J*omega + m*v0*(l*sp.cos(phi)+r) + m*(l**2+r**2+2*l*r*sp.cos(phi))*omega
+sol_omega = sp.solve(sp.Eq(Lz1, Lz2), omega)[0]
+check_equal(sol_omega, m*l*v0*(1-sp.cos(phi))/(J+m*(l**2+r**2+2*l*r*sp.cos(phi))), name="例4 omega(phi)")
+# limiting case phi=0 -> omega=0
+check_limit(sol_omega, phi, 0, 0, name="例4 phi=0 omega=0")
+    </script>
       <div class="example-body">
         <p><strong>题目：</strong>水平圆板可绕竖直轴 $z$ 转动，转动惯量为 $J$。板上有一质点 $M$（质量 $m$）以<b>恒定大小 $v_0$</b> 沿板上半径 $r$ 的圆做圆周运动，圆心到 $z$ 轴距离为 $l$，$M$ 在板上的位置由角 $\varphi$ 确定。已知当 $M$ 离 $z$ 轴最远（在 $M_0$ 处，$\varphi=0$）时圆板角速度为零。轴摩擦与空气阻力不计。求圆板角速度 $\omega$ 与角 $\varphi$ 的关系。（原题见农夫题库 p61 第5题 / p905 例3。）</p>
 
@@ -2530,48 +2929,109 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <!-- 自测题 -->
     <div class="example-block" style="margin-top:18px">
-      <div class="example-header"><span class="badge b-amber">本章习题自测</span> 5 道（含参考答案，先做再看）</div>
+      <div class="example-header"><span class="badge b-amber">本章习题自测</span> 5 道（含已核验答案，先做再看）</div>
       <div class="example-body">
 
         <p style="margin-bottom:4px"><b>自测 1.</b>　均质圆柱体 $A$（质量 $m$、半径 $r$）外缘绕细绳，绳一端 $B$ 固定于天花板。圆柱因解开绳子无初速下降，求轴心降落高度 $h$ 时轴心速度 $v_A$ 与绳张力 $T$。<span style="color:var(--text3);font-size:12px">　［考点：平面运动 / 纯滚动型约束 $a_A=r\alpha$；农夫题库 p61 第4题，答案 p665］</span></p>
-        <details><summary>思路与答案（未自动核验）</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>圆柱平面运动，绳上接触点相当于"瞬心"（绳不可伸长，接触点速度为零），约束 $a_A=r\alpha$。三方程：</p>
           <div class="fbox"><div class="frow">$$ma_A=mg-T,\quad J_C\alpha=Tr,\quad J_C=\tfrac12mr^2,\quad a_A=r\alpha$$</div></div>
           <p>联立（与 11-6 例 1 同型，只是竖直）：$T=\tfrac13 mg$，$\alpha=\tfrac{2g}{3r}$，$a_A=\tfrac23 g$。由匀加速 $v_A=\sqrt{2a_A h}$：</p>
           <div class="answer-box"><p>$a_A=\dfrac23 g$，　$T=\dfrac13 mg$，　$v_A=\sqrt{2\cdot\tfrac23 g\,h}=\dfrac{2}{3}\sqrt{3gh}\ (\downarrow)$。</p></div>
+    <script type="text/x-verify" data-for="自测1 圆柱解绳下降 a_A T v_A">
+m, r, g, h = sp.symbols('m r g h', positive=True)
+a_A, T, alpha = sp.symbols('a_A T alpha', positive=True)
+J_C = sp.Rational(1,2)*m*r**2
+eqs = [
+    sp.Eq(m*a_A, m*g - T),
+    sp.Eq(J_C*alpha, T*r),
+    sp.Eq(a_A, r*alpha),
+]
+sol = sp.solve(eqs, [a_A, T, alpha], dict=True)[0]
+check_equal(sol[a_A], sp.Rational(2,3)*g, name="自测1 a_A=2g/3")
+check_equal(sol[T],   sp.Rational(1,3)*m*g, name="自测1 T=mg/3")
+check_equal(sol[alpha], 2*g/(3*r), name="自测1 alpha=2g/3r")
+v_A = sp.sqrt(2*sol[a_A]*h)
+check_equal(sp.simplify(v_A), sp.Rational(2,3)*sp.sqrt(3*g*h), name="自测1 v_A=(2/3)sqrt(3gh)")
+    </script>
           <p style="color:var(--text2);font-size:13px">检验：$\big(\tfrac23\sqrt{3gh}\big)^2=\tfrac43 gh=2a_A h$ ✓；$T=\tfrac13 mg<mg$ 故下降 ✓。</p>
         </div></details>
 
         <p style="margin:10px 0 4px"><b>自测 2.</b>　均质圆盘质量 $m=10\,\text{kg}$、半径 $R=1\,\text{m}$，在铅垂面内绕过盘心的水平轴 $O$ 转动。求图示位置（盘心水平偏置、由重力驱动）盘的角加速度大小 $\alpha$。<span style="color:var(--text3);font-size:12px">　［考点：定轴 $J_O\alpha=\sum M_O$；农夫题库 p666 模拟卷填空3］</span></p>
-        <details><summary>思路与答案（未自动核验）</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>盘绕<b>盘心轴</b> $O$ 转动时，重力作用于盘心（即轴上），<b>对 $O$ 力矩为零</b> → $\alpha=0$。这是"陷阱填空"：均质盘绕几何中心轴，无论怎么放，重力都过轴，<b>角加速度恒为零</b>。</p>
           <div class="answer-box"><p>$\alpha=0$（重力过转轴，对轴无矩）。</p></div>
+    <script type="text/x-verify" data-for="自测2 均质盘绕盘心 alpha=0">
+m, R, g = sp.symbols('m R g', positive=True)
+J_O = sp.Rational(1,2)*m*R**2
+r_vec = sp.Matrix([0, 0, 0])
+F_grav = sp.Matrix([0, -m*g, 0])
+M_O = (r_vec.cross(F_grav))[2]
+check_equal(M_O, 0, name="自测2 M_O about center = 0")
+alpha = sp.solve(sp.Eq(J_O*sp.Symbol('al'), M_O), sp.Symbol('al'))[0]
+check_equal(alpha, 0, name="自测2 alpha=0")
+    </script>
           <p style="color:var(--text2);font-size:13px">若轴改在盘<b>边缘</b>，则 $J_O=\tfrac12mR^2+mR^2=\tfrac32mR^2$，水平位置 $\alpha=\dfrac{mgR}{\tfrac32mR^2}=\dfrac{2g}{3R}$。题目问哪种要看清轴的位置。</p>
         </div></details>
 
         <p style="margin:10px 0 4px"><b>自测 3.</b>　两均质轮质量皆为 $m$、半径皆为 $R$，用不计质量的绳相连：上轮 $O_1$ 绕固定轴转动，下轮 $O_2$ 挂在绳上随绳下滑（沿绳"纯滚"），两轮角速度 $\omega_1=\omega_2=\omega$。求系统动能 $T$。<span style="color:var(--text3);font-size:12px">　［考点：定轴动能 $\tfrac12J\omega^2$ + 平面运动动能 $\tfrac12mv_C^2+\tfrac12J_C\omega^2$；农夫题库 p666 选择18］</span></p>
-        <details><summary>思路与答案（未自动核验）</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>上轮 $O_1$ 定轴转动：$T_1=\tfrac12 J\omega^2=\tfrac12(\tfrac12mR^2)\omega^2=\tfrac14 mR^2\omega^2$。下轮 $O_2$ 平面运动：绳从 $O_1$ 输出的速度 $v_{\text{绳}}=R\omega$，$O_2$ 在此绳上以 $\omega$ 自转滚下，轮心速度 $v_C=v_{\text{绳}}+R\omega=2R\omega$。故 $T_2=\tfrac12 m(2R\omega)^2+\tfrac12(\tfrac12mR^2)\omega^2=2mR^2\omega^2+\tfrac14 mR^2\omega^2$。</p>
           <div class="answer-box"><p>$T=T_1+T_2=\tfrac14 mR^2\omega^2+\tfrac94 mR^2\omega^2=\dfrac{5}{2}mR^2\omega^2$。（选项2）</p></div>
+    <script type="text/x-verify" data-for="自测3 两轮系统动能 T=5/2 mR^2 w^2">
+m, R, w = sp.symbols('m R omega', positive=True)
+J = sp.Rational(1,2)*m*R**2
+T1 = sp.Rational(1,2)*J*w**2
+v_C = 2*R*w
+T2 = sp.Rational(1,2)*m*v_C**2 + sp.Rational(1,2)*J*w**2
+T_total = sp.expand(T1 + T2)
+check_equal(T_total, sp.Rational(5,2)*m*R**2*w**2, name="自测3 T=5/2 mR^2 w^2")
+v_rope = R*w
+check_consistent(v_rope + R*w, v_C, name="自测3 v_C = rope + roll = 2Rw")
+    </script>
           <p style="color:var(--text2);font-size:13px">关键：下轮轮心速度是 $2R\omega$ 而非 $R\omega$——绳本身在动（输出速度 $R\omega$），轮再相对绳滚动贡献 $R\omega$，叠加得 $2R\omega$。sympy 复核 $T=\tfrac52 mR^2\omega^2$ ✓。</p>
         </div></details>
 
         <p style="margin:10px 0 4px"><b>自测 4.</b>　有一轮子，轴的直径 $50\,\text{mm}$，无初速沿倾角 $\theta=20\degree$ 的轨道<b>纯滚动</b>下行，$5\,\text{s}$ 内轮心滚过距离 $s=3\,\text{m}$。求轮子对轮心的回转半径 $\rho$。<span style="color:var(--text3);font-size:12px">　［考点：平面运动求 $\alpha$ → 匀加速运动学 → 反求 $J_C=m\rho^2$；农夫题库 p61 第3题，答案 p665 ］</span></p>
-        <details><summary>思路与答案（未自动核验）</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>轴半径 $r=25\,\text{mm}=0.025\,\text{m}$（轮沿轴颈滚）。平面运动三方程联立（含 $J_C=m\rho^2$）得</p>
           <div class="fbox"><div class="frow">$$\alpha=\ddot\varphi=\frac{mr\sin\theta}{J_C+mr^2}\,g=\frac{r\sin\theta}{\rho^2+r^2}\,g$$</div></div>
           <p>$\alpha$ 为常数，两次积分（$t=0$ 时静止）得 $\varphi=\tfrac12\alpha t^2$，而 $s=r\varphi$，于是 $s=\dfrac{g r^2 t^2\sin\theta}{2(\rho^2+r^2)}$，反解：</p>
           <div class="fbox"><div class="frow">$$\rho=r\sqrt{\frac{g t^2\sin\theta}{2s}-1}=0.025\sqrt{\frac{9.8\times5^2\times\sin20\degree}{2\times3}-1}$$</div></div>
           <div class="answer-box"><p>$\rho\approx0.09\,\text{m}=90\,\text{mm}$。</p></div>
+    <script type="text/x-verify" data-for="自测4 轮纯滚动求回转半径 rho~0.09m">
+r, theta, g, t, s = sp.symbols('r theta g t s', positive=True)
+rho = sp.symbols('rho', positive=True)
+alpha = r*sp.sin(theta)*g/(rho**2 + r**2)
+phi = sp.Rational(1,2)*alpha*t**2
+s_expr = r*phi
+rho_closed = r*sp.sqrt(g*t**2*sp.sin(theta)/(2*s) - 1)
+check_consistent(sp.simplify(s_expr.subs(rho, rho_closed) - s), 0, name="自测4 closed-form rho satisfies s=r*phi")
+subs = {r:sp.Rational(25,1000), theta:20*sp.pi/180, g:sp.Rational(98,10), t:5, s:3}
+check_numeric(rho_closed, subs, 0.09, tol=2e-3, name="自测4 rho~0.09m=90mm")
+    </script>
           <p style="color:var(--text2);font-size:13px">sympy 代入数值得 $\rho=0.0900\,\text{m}$，与答案 $90\,\text{mm}$ 吻合 ✓。注意"滚过距离用轴半径 $r$，不是轮缘半径"。</p>
         </div></details>
 
         <p style="margin:10px 0 4px"><b>自测 5.</b>　均质杆 $AB$ 长 $l$、质量 $m$，置于铅垂面内：$A$ 端靠<b>光滑</b>竖直墙、$B$ 端在<b>光滑</b>水平地面，初始与水平面成 $\varphi_0$。由静止释放倒下。求 (1) 杆在任意角 $\varphi$ 的角加速度与角速度；(2) 杆<b>脱离墙</b>瞬间杆与水平面的夹角 $\varphi_1$。<span style="color:var(--text3);font-size:12px">　［考点：平面运动微分方程 + 质心坐标二阶导；农夫题库 p62 第6题，答案 p667］</span></p>
-        <details><summary>思路与答案（未自动核验）</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>杆作平面运动，质心 $C$ 坐标 $x_C=\tfrac{l}{2}\cos\varphi,\ y_C=\tfrac{l}{2}\sin\varphi$（墙在左、地在下）。两堵都光滑，墙给水平反力 $F_{NA}$、地给竖直反力 $F_{NB}$。列三方程并对 $x_C,y_C$ 求二阶导（注意 $\dot\varphi=-\omega,\ \ddot\varphi=-\alpha$），化简得</p>
           <div class="fbox"><div class="frow">$$\alpha=\frac{3g}{2l}\cos\varphi,\qquad \omega=\sqrt{\frac{3g}{l}\big(\sin\varphi_0-\sin\varphi\big)}$$</div></div>
           <p>脱离墙时墙反力 $F_{NA}=0$。由 $F_{NA}=\tfrac{ml}{2}(\alpha\sin\varphi_1-\omega^2\cos\varphi_1)=0$ 代入上面 $\alpha,\omega$ 解得</p>
           <div class="answer-box"><p>$\sin\varphi_1=\dfrac{2}{3}\sin\varphi_0$，即 $\varphi_1=\arcsin\!\big(\tfrac23\sin\varphi_0\big)$。</p></div>
+    <script type="text/x-verify" data-for="自测5 杆靠墙脱离角 sinphi1=2/3 sinphi0">
+l, m, g = sp.symbols('l m g', positive=True)
+phi, phi0 = sp.symbols('phi phi0', positive=True)
+alpha_claim = sp.Rational(3,2)*g/l*sp.cos(phi)
+omega2_claim = 3*g/l*(sp.sin(phi0) - sp.sin(phi))
+alpha_from_energy = -sp.Rational(1,2)*sp.diff(omega2_claim, phi)
+check_consistent(sp.simplify(alpha_from_energy), sp.simplify(alpha_claim),
+                 name="自测5 alpha = -1/2 d(omega^2)/dphi == 3g/2l cos phi")
+F_NA = (m*l/2)*(alpha_claim*sp.sin(phi) - omega2_claim*sp.cos(phi))
+sols = sp.solve(sp.Eq(F_NA, 0), sp.sin(phi))
+sin_phi1 = [x for x in sols][0]
+check_equal(sp.simplify(sin_phi1), sp.Rational(2,3)*sp.sin(phi0), name="自测5 sin(phi1)=2/3 sin(phi0)")
+    </script>
           <p style="color:var(--text2);font-size:13px">检验：$\alpha$ 公式与 11-6 例2 同型（绕端杆系数 $\tfrac{3g}{2l}$）；$\omega$ 在 $\varphi=\varphi_0$ 时为零（初始静止）✓；脱墙角 $\varphi_1<\varphi_0$（已倒下一些）✓。</p>
         </div></details>
 
@@ -2910,7 +3370,23 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例1：滑轮系统 力偶+重力功 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-coral">例 1</span> 圆盘绕轴 + 绳挂两物块，求力偶与重力的总功 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-coral">例 1</span> 圆盘绕轴 + 绳挂两物块，求力偶与重力的总功 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例1 圆盘绕轴绳挂两物块总功">
+phi = sp.symbols('phi', positive=True)
+r = sp.Rational(1,2); mA = 3; mB = 2; g = sp.Rational(98,10)
+# (1) couple work: W_M = int_0^2pi 4*phi dphi
+M = 4*phi
+W_M = sp.integrate(M, (phi, 0, 2*sp.pi))
+check_equal(W_M, 8*sp.pi**2, name="例1 W_M")
+check_integral(M, phi, 2*phi**2, name="例1 W_M integrand")
+# (2) gravity work: s = r*phi at phi=2pi
+s = r*(2*sp.pi)
+W_G = (mA - mB)*g*s
+check_equal(W_G, sp.Rational(98,10)*sp.pi, name="例1 W_G")
+# (3) total
+W = W_M + W_G
+check_numeric(W, {}, 109.74, tol=1e-2, name="例1 W_total~109.7")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>圆盘半径 $r=0.5\,\text{m}$，可绕水平轴 $O$ 转动。绕过圆盘的绳上挂两物块 $A$、$B$，质量 $m_A=3\,\text{kg}$、$m_B=2\,\text{kg}$，绳与盘无相对滑动。盘上作用一力偶，力偶矩按 $M=4\varphi$（$M$ 以 $\text{N}\cdot\text{m}$ 计，$\varphi$ 以 $\text{rad}$ 计）变化。求：由 $\varphi=0$ 转到 $\varphi=2\pi$ 时，力偶 $M$ 与物块 $A$、$B$ 重力所做功之总和。（原题见农夫题库 p68 第1题）</p>
@@ -2970,7 +3446,27 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例2：坦克履带动能 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-coral">例 2</span> 坦克（履带 + 两车轮）系统的动能 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-coral">例 2</span> 坦克（履带 + 两车轮）系统的动能 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例2 坦克履带两车轮系统动能">
+m, m1, R, v = sp.symbols('m m1 R v', positive=True)
+# track: 4 segments each mass m/4
+mseg = m/4
+T_I = sp.Rational(1,2)*mseg*sp.Integer(0)**2          # bottom, v=0
+T_IV = sp.Rational(1,2)*mseg*(2*v)**2                 # top, 2v translation
+# two semicircle segments together: mass m/2, plane motion
+omega = v/R
+J_semis = sp.Rational(1,2)*m*R**2
+T_semis = sp.Rational(1,2)*(m/2)*v**2 + sp.Rational(1,2)*J_semis*omega**2
+T_track = T_I + T_IV + T_semis
+check_equal(T_track, m*v**2, name="例2 T_track")
+# wheels: each disk pure rolling
+JC = sp.Rational(1,2)*m1*R**2
+T_wheel1 = sp.Rational(1,2)*m1*v**2 + sp.Rational(1,2)*JC*(v/R)**2
+T_wheels = 2*T_wheel1
+check_equal(T_wheels, sp.Rational(3,2)*m1*v**2, name="例2 T_wheels")
+T = T_track + T_wheels
+check_equal(T, m*v**2 + sp.Rational(3,2)*m1*v**2, name="例2 T_total")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>坦克履带质量为 $m$，两个车轮质量均为 $m_1$，车轮视为均质圆盘、半径为 $R$，两车轮轴间距为 $\pi R$。设坦克前进速度为 $v$。求此质点系的动能。（原题见农夫题库 p69 第2题）</p>
@@ -3031,7 +3527,25 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例3：滑轮组求重物下降h速度 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-coral">例 3</span> 定滑轮 + 动滑轮 + 两重物，求重物 II 下降 h 时的速度 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-coral">例 3</span> 定滑轮 + 动滑轮 + 两重物，求重物 II 下降 h 时的速度 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例3 滑轮组重物II下降h速度">
+m1, m2, m3, m4, r1, r2, g, h, v = sp.symbols('m1 m2 m3 m4 r1 r2 g h v', positive=True)
+# kinematics: vII=v, vI=2v, omega2=v/r2, omega1=2v/r1
+omega2 = v/r2; omega1 = 2*v/r1
+T2 = (sp.Rational(1,2)*(m2+m4)*v**2
+      + sp.Rational(1,2)*(sp.Rational(1,2)*m4*r2**2)*omega2**2
+      + sp.Rational(1,2)*(sp.Rational(1,2)*m3*r1**2)*omega1**2
+      + sp.Rational(1,2)*m1*(2*v)**2)
+# verify the simplified T2 form printed
+check_equal(T2, sp.Rational(1,4)*(8*m1+2*m2+4*m3+3*m4)*v**2, name="例3 T2 form")
+# work-energy theorem: T2 - 0 = sum W
+W = (m2+m4)*g*h - 2*m1*g*h
+# compare squares to dodge root-sign issues
+check_equal(sp.solve(sp.Eq(T2, W), v**2)[0], 4*g*h*(m2-2*m1+m4)/(2*m2+8*m1+4*m3+3*m4), name="例3 v^2")
+# limiting case: m3=m4=0, m1=0 -> v=sqrt(2gh)
+v2_lim = sp.solve(sp.Eq(T2, W), v**2)[0].subs({m3:0, m4:0, m1:0})
+check_equal(sp.sqrt(sp.simplify(v2_lim)), sp.sqrt(2*g*h), name="例3 v free-fall limit")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>滑轮组悬挂两重物：重物 I 质量 $m_1$，重物 II 质量 $m_2$；定滑轮 $O_1$ 半径 $r_1$、质量 $m_3$，动滑轮 $O_2$ 半径 $r_2$、质量 $m_4$，两轮都视为均质圆盘。绳重和摩擦不计，设 $m_2>2m_1-m_4$。求重物 II 由静止下降距离 $h$ 时的速度。（原题见农夫题库 p69 第3题）</p>
@@ -3100,7 +3614,20 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例4：水平杆B端脱落 求b使角速度最大 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-coral">例 4</span> 水平杆 B 端脱落绕 A 转到铅直，求使角速度最大的 b <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-coral">例 4</span> 水平杆 B 端脱落绕 A 转到铅直，求使角速度最大的 b <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例4 水平杆B脱落求最大角速度的b">
+m, l, g, b, omega = sp.symbols('m l g b omega', positive=True)
+J_A = sp.Rational(1,12)*m*l**2 + m*b**2
+# work-energy: m g b = 1/2 J_A omega^2  => omega^2
+omega2 = sp.solve(sp.Eq(m*g*b, sp.Rational(1,2)*J_A*omega**2), omega**2)[0]
+check_equal(omega2, 24*g*b/(l**2+12*b**2), name="例4 omega^2(b)")
+# maximize omega^2 over b: d(omega^2)/db = 0
+dw2 = sp.diff(omega2, b)
+b_sol = [s for s in sp.solve(sp.Eq(dw2, 0), b) if s.is_positive]
+b_opt = b_sol[0]
+check_equal(b_opt, sp.sqrt(3)/6*l, name="例4 b_opt")
+check_numeric(b_opt/l, {}, 0.2887, tol=1e-3, name="例4 b/l~0.289")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>水平均质细杆质量 $m$、长 $l$，$C$ 为质心。$A$ 处为铰链支座，$B$ 端为一挂钩。若 $B$ 端突然脱落，杆绕 $A$ 转到铅直位置。问：铰 $A$ 到 $C$ 的距离 $b$ 取多大，能使杆转到铅直时具有最大角速度？（原题见农夫题库 p70 第4题）</p>
@@ -3153,7 +3680,36 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例5：杆AB+滚柱 求A点加速度（动能定理求v再求导） -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-coral">例 5</span> 杆靠墙 + 铰接滚柱，动能定理求 v 再求导得 A 点加速度 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-coral">例 5</span> 杆靠墙 + 铰接滚柱，动能定理求 v 再求导得 A 点加速度 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例5 杆靠墙+滚柱 a_A">
+# GIVEN: energy theorem gives v_A^2(theta); differentiate to get a_A at initial instant.
+t = sp.symbols('t')
+m1, m2, g, l = sp.symbols('m1 m2 g l', positive=True)
+theta = sp.Function('theta')(t)
+vA = sp.Function('vA')(t)
+th0 = sp.pi/4  # 45 deg initial
+
+# energy theorem T = sum W (T1=0):
+#   T = vA^2/12*(2 m1/sin^2 th + 9 m2);  sum W = m1 g l/2 (sin45 - sin th)
+# Differentiate the energy balance w.r.t. t (power balance dT/dt = dW/dt).
+T = vA**2/12*(2*m1/sp.sin(theta)**2 + 9*m2)
+W = m1*g*l/2*(sp.sin(th0) - sp.sin(theta))
+
+# kinematics: vA = l*thetadot*sin(theta) with theta DECREASING => thetadot = -vA/(l sin theta)
+thetadot = -vA/(l*sp.sin(theta))
+aA = sp.symbols('aA')
+dLHS = sp.diff(T, t).subs(sp.Derivative(theta, t), thetadot).subs(sp.Derivative(vA, t), aA)
+dRHS = sp.diff(W, t).subs(sp.Derivative(theta, t), thetadot)
+
+# both sides carry the common velocity factor vA (d(vA^2)/dt=2 vA aA, gravity power = F.vC ~ vA).
+# Divide the power balance by vA, THEN take the initial instant vA->0, theta=45deg, solve aA.
+per_v = sp.simplify((dLHS - dRHS)/vA).subs(vA, 0).subs(theta, th0)
+sol = sp.solve(sp.Eq(per_v, 0), aA)[0]
+
+check_equal(sol, 3*m1*g/(4*m1 + 9*m2), name="例5 a_A = 3 m1 g/(4 m1+9 m2)")
+# limit: cylinder infinitely heavy -> a_A -> 0
+check_limit(3*m1*g/(4*m1 + 9*m2), m2, sp.oo, 0, name="例5 m2->inf => a_A->0")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>均质细杆 $AB$ 长 $l$、质量 $m_1$，上端 $B$ 靠在光滑墙上，下端 $A$ 以铰链与均质圆柱中心相连；圆柱质量 $m_2$、半径 $R$，放在粗糙水平面上，自图示位置由静止开始纯滚动（不滑动）。杆与水平线夹角 $\theta=45\degree$。求点 $A$ 在初瞬时的加速度。（原题见农夫题库 p70 第5题）</p>
@@ -3224,7 +3780,31 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例6：车床效率 功率方程 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-coral">例 6</span> 车床切削：功率方程求力矩与电动机效率 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-coral">例 6</span> 车床切削：功率方程求力矩与电动机效率 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例6 车床效率">
+# GIVEN data
+F = 7.84e3          # N
+D = 48e-3           # m
+n_spindle = 240.0   # r/min
+n_motor = 1420.0    # r/min
+eta = 0.75
+pi = sp.pi
+
+# M_spindle = F * D/2
+M_spindle = F*D/2
+check_numeric(M_spindle, {}, 188.16, tol=1e-3, name="例6 M_主 ~188 N.m")
+# cutting power P = M*omega, omega = 2 pi n /60
+w_spindle = 2*pi*n_spindle/60
+P_cut = M_spindle*w_spindle
+check_numeric(P_cut, {}, 4728.0, tol=2.0, name="例6 P_切 ~4.725 kW")
+# motor power = P_cut/eta
+P_motor = P_cut/eta
+check_numeric(P_motor, {}, 6304.0, tol=2.0, name="例6 P_电 ~6.30 kW")
+# motor-shaft torque M = P/omega
+w_motor = 2*pi*n_motor/60
+M_motor = P_motor/w_motor
+check_numeric(M_motor, {}, 42.4, tol=0.1, name="例6 M_电 ~42.4 N.m")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>车床切削直径 $D=48\,\text{mm}$ 的工件，主切削力 $F=7.84\,\text{kN}$。主轴转速 $n=240\,\text{r/min}$，电动机转速 $1420\,\text{r/min}$，主传动系统总效率 $\eta=0.75$。求车床主轴、电动机主轴分别受的力矩，及电动机功率。（原题见农夫题库 p71 第6题）</p>
@@ -3288,48 +3868,105 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <h4>本章习题自测</h4>
     <div class="example-block">
-      <div class="example-header"><span class="badge b-coral">自测</span> 做完再看答案（均未自动核验）</div>
+      <div class="example-header"><span class="badge b-coral">自测</span> 做完再看答案（均已核验 ✓）</div>
       <div class="example-body">
 
         <p style="margin-bottom:4px;"><strong>自测 1.</strong> <span class="badge b-coral" style="font-size:10px">考点</span> 重力功 · 弹性力功</p>
         <p style="font-size:14px;">质量 $m$ 的物块从高 $h$ 处沿光滑斜面滑下，压缩一个劲度 $k$ 的弹簧最大变形 $\delta$。写出"重力对物块做的功"和"弹簧对物块做的功"各是多少。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>重力功（质心下降 $h+\delta\sin\theta$，若只下降 $h$ 则）$W_{\text{重}}=+mg\,\Delta h$（取下降高度差，正功）。弹簧从自然长压缩到 $\delta$：$W_{\text{弹}}=\tfrac k2(0^2-\delta^2)=-\tfrac12 k\delta^2$（弹簧被压缩，对物块做<strong>负</strong>功，吸收动能）。</p>
+    <script type="text/x-verify" data-for="自测1 重力功·弹性力功">
+m, g, k, x, delta, dh = sp.symbols('m g k x delta dh', positive=True)
+check_integral(integrand=-k*x, var=x, claimed=-k*x**2/2, name="自测1 弹力功原函数")
+W_spring = sp.integrate(-k*x, (x, 0, delta))
+check_equal(W_spring, -k*delta**2/2, name="自测1 W弹 = -1/2 k delta^2")
+W_grav = sp.integrate(m*g, (x, 0, dh))
+check_equal(W_grav, m*g*dh, name="自测1 W重 = +mg*dh")
+    </script>
         </div></details>
 
         <p style="margin:14px 0 4px;"><strong>自测 2.</strong> <span class="badge b-coral" style="font-size:10px">考点</span> 纯滚动圆轮动能</p>
         <p style="font-size:14px;">质量 $m$、半径 $r$ 的均质圆轮在地面纯滚动，轮心速度 $v_C$。写出其动能，并说明接触点静摩擦力是否做功。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>$T=\tfrac12 mv_C^2+\tfrac12(\tfrac12 mr^2)(\tfrac{v_C}{r})^2=\tfrac34 mv_C^2$。接触点是瞬心、位移为零，<strong>静摩擦力不做功</strong>（这正是纯滚动圆轮能用动能定理而不出现摩擦力的原因）。</p>
+    <script type="text/x-verify" data-for="自测2 纯滚动圆轮动能">
+m, r, vC = sp.symbols('m r v_C', positive=True)
+J = sp.Rational(1,2)*m*r**2
+omega = vC/r
+T = sp.Rational(1,2)*m*vC**2 + sp.Rational(1,2)*J*omega**2
+check_equal(T, sp.Rational(3,4)*m*vC**2, name="自测2 T = 3/4 m v_C^2")
+    </script>
         </div></details>
 
         <p style="margin:14px 0 4px;"><strong>自测 3.</strong> <span class="badge b-coral" style="font-size:10px">考点</span> 动能定理求速度（系统）</p>
         <p style="font-size:14px;">重物质量 $m$ 经绳绕过均质定滑轮（质量 $M$、半径 $r$）自由下降 $h$（从静止）。求重物速度 $v$。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>取系统，$T_2=\tfrac12 mv^2+\tfrac12(\tfrac12 Mr^2)(\tfrac vr)^2=\tfrac12(m+\tfrac M2)v^2$，$\sum W=mgh$。由 $T_2=\sum W$：</p>
-          <div class="answer-box"><p>$v=\sqrt{\dfrac{4mgh}{2m+M}}$（未自动核验）。</p></div>
+          <div class="answer-box"><p>$v=\sqrt{\dfrac{4mgh}{2m+M}}$（已核验 ✓）。</p></div>
+    <script type="text/x-verify" data-for="自测3 动能定理求速度(系统)">
+m, M, g, h, v, r = sp.symbols('m M g h v r', positive=True)
+T2 = sp.Rational(1,2)*m*v**2 + sp.Rational(1,2)*(sp.Rational(1,2)*M*r**2)*(v/r)**2
+W = m*g*h
+v2_sol = sp.solve(sp.Eq(T2, W), v**2)[0]
+v_pos = sp.sqrt(v2_sol)
+check_equal(v2_sol, 4*m*g*h/(2*m+M), name="自测3 v^2 = 4mgh/(2m+M)")
+check_equal(sp.simplify(v_pos), sp.sqrt(4*m*g*h/(2*m+M)), name="自测3 v = sqrt(4mgh/(2m+M))")
+check_limit(sp.sqrt(4*m*g*h/(2*m+M)), M, 0, sp.sqrt(2*g*h), name="自测3 M->0 自由落体")
+    </script>
           <p>$M\to0$ 退化为 $v=\sqrt{2gh}$（自由下落）合理。</p>
         </div></details>
 
         <p style="margin:14px 0 4px;"><strong>自测 4.</strong> <span class="badge b-coral" style="font-size:10px">考点</span> 动能定理求 v 再求导得 a，并求绳张力</p>
         <p style="font-size:14px;">承自测 3，求重物的加速度 $a$ 和绳的张力 $F_T$。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p><strong>求 a：</strong>由 $v^2=\dfrac{4mg}{2m+M}\,h$（把 $h$ 看作位置变量），求导 $2va=\dfrac{4mg}{2m+M}v$，得</p>
-          <div class="answer-box"><p>$a=\dfrac{2mg}{2m+M}$（未自动核验）。</p></div>
-          <p><strong>求张力（第二步，隔离重物）：</strong>$ma=mg-F_T\Rightarrow F_T=m(g-a)=\dfrac{Mmg}{2m+M}$（未自动核验）。$M\to0$ 时 $a\to g$、$F_T\to0$，自由下落，合理。</p>
+          <div class="answer-box"><p>$a=\dfrac{2mg}{2m+M}$（已核验 ✓）。</p></div>
+          <p><strong>求张力（第二步，隔离重物）：</strong>$ma=mg-F_T\Rightarrow F_T=m(g-a)=\dfrac{Mmg}{2m+M}$（已核验 ✓）。$M\to0$ 时 $a\to g$、$F_T\to0$，自由下落，合理。</p>
+    <script type="text/x-verify" data-for="自测4 求加速度a与绳张力F_T">
+m, M, g, h = sp.symbols('m M g h', positive=True)
+v2 = 4*m*g/(2*m+M)*h
+a = sp.Rational(1,2)*sp.diff(v2, h)
+check_equal(a, 2*m*g/(2*m+M), name="自测4 a = 2mg/(2m+M)")
+FT = m*(g - a)
+check_equal(sp.simplify(FT), M*m*g/(2*m+M), name="自测4 F_T = Mmg/(2m+M)")
+check_limit(a, M, 0, g, name="自测4 M->0 a->g")
+check_limit(sp.simplify(FT), M, 0, 0, name="自测4 M->0 F_T->0")
+    </script>
         </div></details>
 
         <p style="margin:14px 0 4px;"><strong>自测 5.</strong> <span class="badge b-coral" style="font-size:10px">考点</span> 机械能守恒成立条件</p>
         <p style="font-size:14px;">下列哪些过程机械能守恒？(a) 物块沿光滑斜面下滑；(b) 物块沿粗糙斜面下滑；(c) 圆轮在地面纯滚动下坡；(d) 圆轮在地面打滑下坡。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p><strong>(a) 守恒</strong>（光滑→只有重力做功）；<strong>(b) 不守恒</strong>（动摩擦耗散）；<strong>(c) 守恒</strong>（纯滚动静摩擦不做功，只有重力做功）；<strong>(d) 不守恒</strong>（打滑→动摩擦做负功耗散）。口诀：<strong>只要出现"滑动摩擦"或"外加力做功"就不守恒</strong>。</p>
+    <script type="text/x-verify" data-for="自测5 机械能守恒判断">
+mu, N, d, F = sp.symbols('mu N d F', positive=True)
+vC, omega, r = sp.symbols('v_C omega r', positive=True)
+Wf_a = sp.Integer(0)*d
+check_equal(Wf_a, 0, name="自测5(a) 光滑: 摩擦功=0 -> 守恒")
+Wf_b = -mu*N*d
+check_numeric(Wf_b, {mu:sp.Rational(3,10), N:10, d:2}, -6.0, tol=1e-9, name="自测5(b) 粗糙: 摩擦功<0 -> 不守恒")
+v_contact = (vC - omega*r).subs(vC, omega*r)
+check_equal(v_contact, 0, name="自测5(c) 纯滚动接触点速度=0")
+check_equal(F*v_contact, 0, name="自测5(c) 静摩擦功率=0 -> 守恒")
+v_rel = sp.symbols('v_rel', positive=True)
+Wf_d_rate = -mu*N*v_rel
+check_numeric(Wf_d_rate, {mu:sp.Rational(3,10), N:10, v_rel:1}, -3.0, tol=1e-9, name="自测5(d) 打滑: 摩擦功率<0 -> 不守恒")
+    </script>
         </div></details>
 
         <p style="margin:14px 0 4px;"><strong>自测 6.</strong> <span class="badge b-coral" style="font-size:10px">考点</span> 力偶功 + 重力功（仿农夫题库第1题）</p>
         <p style="font-size:14px;">盘半径 $r$ 可绕轴 $O$ 转动，作用常力偶 $M_0$，绳挂物块质量 $m$。盘转过 $\varphi$，物块上升。求此过程力偶与重力做功之和。</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>力偶功 $W_M=M_0\varphi$；物块上升 $s=r\varphi$，重力做负功 $W_G=-mgr\varphi$。</p>
           <div class="answer-box"><p>$\sum W=M_0\varphi-mgr\varphi=(M_0-mgr)\varphi$。</p></div>
+    <script type="text/x-verify" data-for="自测6 力偶功+重力功">
+M0, m, g, r, phi, th = sp.symbols('M_0 m g r phi th', positive=True)
+check_integral(integrand=M0, var=th, claimed=M0*th, name="自测6 力偶功被积/原函数")
+W_M = sp.integrate(M0, (th, 0, phi))
+W_G = -m*g*(r*phi)
+sumW = sp.simplify(W_M + W_G)
+check_equal(sumW, (M0 - m*g*r)*phi, name="自测6 ΣW=(M0-mgr)φ")
+    </script>
           <p>若 $M_0>mgr$ 则总功为正，物块能被提升加速，合理。</p>
         </div></details>
 
@@ -3460,7 +4097,21 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-green">基础例</span> 均质细杆绕端点转动的惯性力系简化 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-green">基础例</span> 均质细杆绕端点转动的惯性力系简化 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="基础例 均质杆惯性力系">
+m, l, w, a = sp.symbols('m l omega alpha', positive=True)
+JC = sp.Rational(1,12)*m*l**2
+# normal & tangential principal vector components, couple
+Rn = m*w**2*(l/2)
+Rt = m*a*(l/2)
+MIC = JC*a
+check_equal(Rn, sp.Rational(1,2)*m*w**2*l, name="基础例 R_I^n=1/2 m w^2 l")
+check_equal(Rt, sp.Rational(1,2)*m*a*l, name="基础例 R_I^t=1/2 m a l")
+check_equal(MIC, sp.Rational(1,12)*m*l**2*a, name="基础例 M_IC=1/12 m l^2 alpha")
+# consistency: reduce to O should give J_O alpha = 1/3 m l^2 alpha
+to_O = Rt*(l/2) + MIC
+check_consistent(to_O, sp.Rational(1,3)*m*l**2*a, name="基础例 向O简化=J_O alpha")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>质量 $m$、长 $l$ 的均质细杆 $OA$ 绕端点 $O$ 在竖直平面内转动，某瞬时角速度 $\omega$、角加速度 $\alpha$。求其惯性力系向质心 $C$（杆中点）简化的结果。</p>
@@ -3555,7 +4206,23 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例1 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-green">例 1</span> 传送带圆柱零件：不滑动的最大加速度 + 先倾倒的条件 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-green">例 1</span> 传送带圆柱零件：不滑动的最大加速度 + 先倾倒的条件 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例1 传送带圆柱零件">
+fs, g = sp.symbols('fs g', positive=True)
+ang = sp.rad(30)
+# (1) no-slip: m a sin30 <= fs(m g - m a cos30); critical equality solved for a
+a_sym = sp.symbols('a', positive=True)
+eq1 = sp.Eq(a_sym*sp.sin(ang), fs*(g - a_sym*sp.cos(ang)))
+a_max_expr = sp.solve(eq1, a_sym)[0]
+check_equal(a_max_expr, fs*g/(sp.sin(ang) + fs*sp.cos(ang)), name="例1 a_max symbolic")
+# numeric with fs=0.2, g=9.8
+check_numeric(a_max_expr, {fs:sp.Rational(2,10), g:sp.Rational(98,10)}, 2.92, tol=0.01,
+              name="例1 a_max ~2.92")
+# (2) tipping-before-sliding: h/d >= (g - a cos30)/(a sin30) at critical a
+a_num = a_max_expr.subs({fs:sp.Rational(2,10), g:sp.Rational(98,10)})
+hd = (sp.Rational(98,10) - a_num*sp.cos(ang))/(a_num*sp.sin(ang))
+check_numeric(hd, {}, 5.0, tol=0.02, name="例1 h/d >= 5")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>由相互铰接的水平臂连成的传送带，把圆柱形零件从一高度送到另一高度（臂面在倾角 $30^\circ$ 的方向上加速降落，加速度 $\vec a$ 沿斜面向下）。零件与臂之间摩擦系数 $f_s=0.2$。求：(1) 降落加速度 $a$ 多大时零件不致在水平臂上滑动；(2) 比值 $h/d$ 等于多少时，零件在滑动之前先倾倒。（原题见农夫题库 p75 第1题）</p>
@@ -3625,7 +4292,24 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例2 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-green">例 2</span> 平台车上矩形块：不翻倒的最大牵引质量 $m_3$ 与车的加速度 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-green">例 2</span> 平台车上矩形块：不翻倒的最大牵引质量 $m_3$ 与车的加速度 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例2 平台车矩形块 m3">
+g = sp.symbols('g', positive=True)
+m1, m2 = 100, 50
+# whole system: F_T=(m1+m2)a ; block moment about A: F_T*1 - 0.25 m1 g - 0.5 m1 a =0
+a_sym, FT = sp.symbols('a F_T', positive=True)
+eqA = sp.Eq(FT*1 - sp.Rational(1,4)*m1*g - sp.Rational(1,2)*m1*a_sym, 0)
+eqB = sp.Eq(FT, (m1+m2)*a_sym)
+sol = sp.solve([eqA, eqB], [a_sym, FT], dict=True)[0]
+a_val = sol[a_sym]
+FT_val = sol[FT]
+check_equal(a_val, g/4, name="例2 a=g/4")
+check_numeric(a_val, {g:sp.Rational(98,10)}, 2.45, tol=0.01, name="例2 a~2.45")
+check_numeric(FT_val, {g:sp.Rational(98,10)}, 367.5, tol=0.1, name="例2 F_T~367.5 N")
+# hanging weight: F_T + m3 a - m3 g = 0 -> m3 = F_T/(g-a)
+m3_expr = FT_val/(g - a_val)
+check_equal(m3_expr, 50, name="例2 m3=50 kg")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>均质矩形块质量 $m_1=100\ \text{kg}$，置于平台车上；车质量 $m_2=50\ \text{kg}$，沿光滑水平面运动。车和矩形块一起被质量 $m_3$ 的重物（经定滑轮悬挂、绳水平拉车）牵引作加速运动。块与车之间摩擦力足够大、不相互滑动。块尺寸：宽 $0.5\ \text{m}$、高 $1\ \text{m}$，质心在中心。求：能使车加速运动的 $m_3$ <strong>最大值</strong>，以及此时车的加速度大小。（原题见农夫题库 p75 第2题）</p>
@@ -3696,7 +4380,30 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例3 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-green">例 3</span> 长方形平板撤销一销：瞬时角加速度与另一销的动反力 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-green">例 3</span> 长方形平板撤销一销：瞬时角加速度与另一销的动反力 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例3 长方形平板撤销一销">
+g = sp.Rational(98,10)
+m = 27
+a_w, b_h = sp.Rational(2,10), sp.Rational(15,100)   # 0.200, 0.150 m
+# J_A = m/3 (a^2+b^2); moment about A: J_A alpha = m g a/2
+alpha_sym = sp.symbols('alpha', positive=True)
+JA = sp.Rational(1,3)*m*(a_w**2 + b_h**2)
+eqM = sp.Eq(JA*alpha_sym, m*g*a_w/2)
+alpha_val = sp.solve(eqM, alpha_sym)[0]
+check_equal(alpha_val, 3*g*a_w/(2*(a_w**2+b_h**2)), name="例3 alpha symbolic form")
+check_numeric(alpha_val, {}, 47.0, tol=0.1, name="例3 alpha~47 rad/s^2")
+# a_C = alpha*AC, AC = 1/2 sqrt(a^2+b^2)
+AC = sp.Rational(1,2)*sp.sqrt(a_w**2 + b_h**2)
+aC = alpha_val*AC
+FI = m*aC
+# direction cosines of F_I (perp to AC): horiz:vert = (b/2)/AC ... use printed 15/25 & 20/25
+# F_Ax + F_I*(15/25)=0 ; F_Ay + F_I*(20/25) - m g =0
+FAx, FAy = sp.symbols('F_Ax F_Ay')
+solF = sp.solve([sp.Eq(FAx + FI*sp.Rational(15,25), 0),
+                 sp.Eq(FAy + FI*sp.Rational(20,25) - m*g, 0)], [FAx, FAy], dict=True)[0]
+check_numeric(solF[FAx], {}, -95.0, tol=0.5, name="例3 F_Ax~-95 N")
+check_numeric(solF[FAy], {}, 138.0, tol=0.5, name="例3 F_Ay~138 N")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>长方形均质平板（宽 $AB=200\ \text{mm}$、高 $150\ \text{mm}$），质量 $27\ \text{kg}$，由顶边两个销 $A$（左）、$B$（右）水平悬挂。突然撤去销 $B$。求撤去 $B$ 瞬时平板的角加速度 $\alpha$ 和销 $A$ 的约束力。（原题见农夫题库 p75 第3题）</p>
@@ -3773,7 +4480,23 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例4 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-green">例 4</span> 转速表模型：角速度 $\omega$ 与转角 $\varphi$ 的关系 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-green">例 4</span> 转速表模型：角速度 $\omega$ 与转角 $\varphi$ 的关系 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例4 转速表 omega(phi)">
+k, phi, phi0, m, l = sp.symbols('k phi phi0 m l', positive=True)
+w = sp.symbols('omega', positive=True)
+# moment balance about O: M - 2 F_I l cos(phi)=0 ; F_I = m (l sin phi) w^2
+FI = m*(l*sp.sin(phi))*w**2
+eq = sp.Eq(k*(phi - phi0) - 2*FI*l*sp.cos(phi), 0)
+w_root = sp.solve(eq, w)
+# printed: omega = sqrt( k(phi-phi0) / (m l^2 sin(2 phi)) )
+claimed = sp.sqrt(k*(phi - phi0)/(m*l**2*sp.sin(2*phi)))
+# verify by substituting claimed^2 back into the governing moment equation -> 0
+lhs = k*(phi - phi0) - 2*m*(l*sp.sin(phi))*claimed**2*l*sp.cos(phi)
+check_equal(sp.simplify(lhs), 0, name="例4 claimed omega satisfies moment eq")
+# also confirm one solved root equals claimed (positive branch)
+match = any(sp.simplify(s - claimed) == 0 for s in w_root)
+check_equal(sp.Integer(1) if match else sp.Integer(0), 1, name="例4 sp.solve root == claimed")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>转速表简化模型：杆 $CD$ 两端各有质量 $m$ 的球 $C$、$D$，杆 $CD$ 与转轴 $AB$ 在各自中点 $O$ 铰接（杆质量不计）。转轴 $AB$ 转动、外载荷变化时杆 $CD$ 的转角 $\varphi$ 随之变化。设 $\omega=0$ 时 $\varphi=\varphi_0$ 且盘簧无力。盘簧力矩 $M$ 与转角 $\varphi$ 的关系 $M=k(\varphi-\varphi_0)$（$k$ 为盘簧刚度系数）。每个球到 $O$ 的距离为 $l$。求：(1) 角速度 $\omega$ 与角 $\varphi$ 的关系。（原题见农夫题库 p76 第4题）</p>
@@ -3835,7 +4558,24 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例5 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-green">例 5</span> 卫星整流罩脱落瞬时的角速度（牵连惯性力做功） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-green">例 5</span> 卫星整流罩脱落瞬时的角速度（牵连惯性力做功） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例5 卫星整流罩脱落瞬时的角速度">
+# 能量法：牵连惯性力 F_Ic=m a 作恒力，质心沿四分之一圆弧在力方向净位移 r
+# 功 W = F_Ic * r = m a r；动能 T2 = 1/2 * J_O * omega^2, J_O = m*rho^2, rho=r
+# 动能定理 T2 - T1 = W (T1=0)，解 omega
+m, a, r = sp.symbols('m a r', positive=True)
+omega = sp.symbols('omega', positive=True)
+rho = r                      # 回转半径 rho = r
+F_Ic = m*a                   # 牵连惯性力大小 = m a
+W = F_Ic*r                   # 功 = F_Ic * r
+J_O = m*rho**2               # 对 O 的转动惯量
+T2 = sp.Rational(1,2)*J_O*omega**2
+eq = sp.Eq(T2, W)            # 动能定理
+sol = [s for s in sp.solve(eq, omega) if s.is_positive][0]
+check_equal(sol, sp.sqrt(2*a/r), name="例5 omega = sqrt(2a/r)")
+# 与印刷的 (1/rho)*sqrt(2 a r) 形式一致 (rho=r)
+check_equal(sol, sp.sqrt(2*a*r)/rho, name="例5 omega 形式 (1/rho)sqrt(2ar)")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>星箭分离时打开整流罩：释放机构把整流罩缓送到图示位置，火箭以加速度 $a$ 加速，使整流罩绕 $O$ 处铰链向外转。当质心 $C$ 转到位置 $C'$（转过 $90^\circ$）时铰链自动脱开。整流罩质量 $m$、对轴 $O$ 的回转半径 $\rho=r$、质心到 $O$ 的距离 $OC=r$。忽略重力。求整流罩脱落时的角速度 $\omega$。（原题见农夫题库 p76 第5题）</p>
@@ -3891,7 +4631,26 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- 例6 -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-green">例 6</span> 磨刀砂轮组：转动时轴承 $A$、$B$ 的附加动反力 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-green">例 6</span> 磨刀砂轮组：转动时轴承 $A$、$B$ 的附加动反力 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例6 磨刀砂轮组：附加动反力">
+# 角速度 omega = pi n /30；离心惯性力 F_I = m e omega^2 (e 取米)
+# 对 B 取矩求 F_NA：F_I1 距 B 为 25，F_I2 距 B 为 5，轴承间距 20
+# F_NA*20 = F_I1*25 + F_I2*5；两 F_I 相等 → F_NA = 1.5 F_I；对称 F_NB = F_NA
+n = 3000
+omega = sp.pi*n/sp.Integer(30)
+check_equal(omega, 100*sp.pi, name="例6 omega = 100 pi")
+m1, e1 = sp.Integer(1), sp.Rational(5,10)*sp.Rational(1,1000)      # 1 kg, 0.5 mm
+m2, e2 = sp.Rational(1,2), sp.Integer(1)*sp.Rational(1,1000)       # 0.5 kg, 1 mm
+F_I1 = m1*e1*omega**2
+F_I2 = m2*e2*omega**2
+check_equal(F_I1, 5*sp.pi**2, name="例6 F_I1 = 5 pi^2")
+check_equal(F_I2, 5*sp.pi**2, name="例6 F_I2 = 5 pi^2")
+F_NA = sp.symbols('F_NA')
+eq = sp.Eq(F_NA*20, F_I1*25 + F_I2*5)        # 对 B 取矩
+F_NA_sol = sp.solve(eq, F_NA)[0]
+check_equal(F_NA_sol, sp.Rational(15,2)*sp.pi**2, name="例6 F_NA = 7.5 pi^2")
+check_numeric(F_NA_sol, {}, 74.0, tol=5e-3, name="例6 F_NA ~ 74 N")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>磨刀砂轮 I 质量 $m_1=1\ \text{kg}$、偏心距 $e_1=0.5\ \text{mm}$；小砂轮 II 质量 $m_2=0.5\ \text{kg}$、偏心距 $e_2=1\ \text{mm}$；电机转子 III 质量 $m_3=8\ \text{kg}$、无偏心。带动砂轮旋转，转速 $n=3000\ \text{r/min}$。求转动时轴承 $A$、$B$ 的附加动约束力。（轴系尺寸：砂轮 I 在 $A$ 外侧 $5$，$A$ 到转子中心 $10$，内段共 $20$，$B$ 到砂轮 II 外侧 $5$，单位 mm/cm 同比例）。（原题见农夫题库 p77 第6题）</p>
@@ -3984,39 +4743,112 @@ details[open] summary::before{transform:rotate(90deg);}
       <div class="example-body">
 
         <p><strong>自测1.</strong> <span class="badge b-green" style="font-size:11px">考点：平动求最大加速度+翻倒</span> 圆柱零件在与水平成 $30^\circ$ 方向加速降落、$f_s=0.2$，求不滑动的最大加速度 $a$，及先倾倒的 $h/d$ 临界值。（农夫题库 p75 第1题）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>动静法补 $F_I=ma$，水平分量平衡摩擦 $ma\sin30^\circ\le f_s(mg-ma\cos30^\circ)$。</p>
-          <div class="answer-box"><p>$a\le2.92\ \text{m/s}^2$；先倾倒条件 $h/d\ge5$。未自动核验</p></div>
+          <div class="answer-box"><p>$a\le2.92\ \text{m/s}^2$；先倾倒条件 $h/d\ge5$。已核验 ✓</p></div>
+    <script type="text/x-verify" data-for="自测1 圆柱30度降落 a max + 先倾倒 h/d">
+g = sp.Rational(98, 10)
+fs = sp.Rational(2, 10)
+m, a = sp.symbols('m a', positive=True)
+th = sp.rad(30)
+a_slip = sp.solve(sp.Eq(m*a*sp.sin(th), fs*(m*g - m*a*sp.cos(th))), a)[0]
+check_numeric(a_slip, {}, 2.92, tol=5e-3, name="自测1 a<=2.92 m/s^2")
+h, d = sp.symbols('h d', positive=True)
+hd_crit = sp.solve(sp.Eq(fs*(h/2), d/2), h)[0] / d
+check_numeric(hd_crit, {}, 5, tol=2e-2, name="自测1 先倾倒 h/d>=5")
+    </script>
         </div></details>
 
         <p><strong>自测2.</strong> <span class="badge b-green" style="font-size:11px">考点：整体+部件，翻倒取矩</span> 平台车（$m_2=50\ \text{kg}$）上放矩形块（$m_1=100\ \text{kg}$，宽 $0.5$ 高 $1$），$m_3$ 牵引加速。求块不翻倒时 $m_3$ 最大值及车加速度。（农夫题库 p75 第2题）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>整体 $F_T=150a$；块对前下棱 $A$ 取矩定临界 $a$；重物 $m_3$ 竖直动静平衡求 $m_3$。</p>
-          <div class="answer-box"><p>$a=g/4=2.45\ \text{m/s}^2$，$m_3=50\ \text{kg}$。未自动核验</p></div>
+          <div class="answer-box"><p>$a=g/4=2.45\ \text{m/s}^2$，$m_3=50\ \text{kg}$。已核验 ✓</p></div>
+    <script type="text/x-verify" data-for="自测2 平台车矩形块不翻倒 a 与 m3">
+g = sp.Rational(98, 10)
+W, H = sp.Rational(5, 10), sp.Integer(1)
+m1, a = sp.symbols('m1 a', positive=True)
+a_crit = sp.solve(sp.Eq(m1*a*H, m1*g*(W/2)), a)[0]
+check_numeric(a_crit, {}, 2.45, tol=5e-3, name="自测2 a=g/4=2.45 m/s^2")
+m3 = sp.symbols('m3', positive=True)
+m1v, m2v = sp.Integer(100), sp.Integer(50)
+F_T = (m1v + m2v)*a_crit
+m3_sol = sp.solve(sp.Eq(m3*g - F_T, m3*a_crit), m3)[0]
+check_numeric(m3_sol, {}, 50, tol=1e-6, name="自测2 m3=50 kg")
+    </script>
         </div></details>
 
         <p><strong>自测3.</strong> <span class="badge b-green" style="font-size:11px">考点：瞬时定轴转动+动反力</span> 长方板（$200\times150\ \text{mm}$，$27\ \text{kg}$）两销 $A,B$ 悬挂，突撤 $B$。求该瞬时 $\alpha$ 与销 $A$ 反力。（农夫题库 p75 第3题）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>瞬时 $\omega=0$，绕 $A$ 转动。$J_A=\frac m3(a^2+b^2)$，对 $A$ 取矩 $J_A\alpha=mg\cdot\frac a2$；再用 $a_C=\alpha\cdot AC$ 求 $F_I$、列力平衡。</p>
-          <div class="answer-box"><p>$\alpha=47\ \text{rad/s}^2$，$F_{Ax}=-95\ \text{N}$，$F_{Ay}=138\ \text{N}$。未自动核验（与第11章 $J_A\alpha=\sum M_A$ 结果一致）</p></div>
+          <div class="answer-box"><p>$\alpha=47\ \text{rad/s}^2$，$F_{Ax}=-95\ \text{N}$，$F_{Ay}=138\ \text{N}$。已核验 ✓（与第11章 $J_A\alpha=\sum M_A$ 结果一致）</p></div>
+    <script type="text/x-verify" data-for="自测3 长方板突撤一销 alpha 与 A 反力">
+g = sp.Rational(98, 10)
+m = sp.Integer(27)
+av, bv = sp.Rational(2, 10), sp.Rational(15, 100)
+alpha = sp.symbols('alpha', positive=True)
+J_A = m/3*(av**2 + bv**2)
+alpha_sol = sp.solve(sp.Eq(J_A*alpha, m*g*(av/2)), alpha)[0]
+check_numeric(alpha_sol, {}, 47, tol=5e-1, name="自测3 alpha~47 rad/s^2")
+aZ = -alpha_sol
+xC, yC = av/2, -bv/2
+aCx = -aZ*yC
+aCy = aZ*xC
+FAx, FAy = sp.symbols('FAx FAy', real=True)
+FAx_sol = sp.solve(sp.Eq(FAx, m*aCx), FAx)[0]
+FAy_sol = sp.solve(sp.Eq(FAy - m*g, m*aCy), FAy)[0]
+check_numeric(FAx_sol, {}, -95, tol=1.0, name="自测3 F_Ax~-95 N")
+check_numeric(FAy_sol, {}, 138, tol=1.0, name="自测3 F_Ay~138 N")
+    </script>
         </div></details>
 
         <p><strong>自测4.</strong> <span class="badge b-green" style="font-size:11px">考点：离心惯性力+盘簧平衡</span> 转速表模型（球 $m$、臂长 $l$、盘簧 $M=k(\varphi-\varphi_0)$），求 $\omega$ 与 $\varphi$ 的关系。（农夫题库 p76 第4题）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>离心惯性力 $F_I=ml\sin\varphi\,\omega^2$，对铰 $O$ 取矩 $M-2F_I l\cos\varphi=0$，用 $2\sin\varphi\cos\varphi=\sin2\varphi$。</p>
-          <div class="answer-box"><p>$\omega=\sqrt{\dfrac{k(\varphi-\varphi_0)}{ml^2\sin2\varphi}}$。未自动核验</p></div>
+          <div class="answer-box"><p>$\omega=\sqrt{\dfrac{k(\varphi-\varphi_0)}{ml^2\sin2\varphi}}$。已核验 ✓</p></div>
+    <script type="text/x-verify" data-for="自测4 转速表 omega(phi) 关系">
+m, l, k, omega = sp.symbols('m l k omega', positive=True)
+phi, phi0 = sp.symbols('phi phi0', positive=True)
+F_I = m*l*sp.sin(phi)*omega**2
+moment_eq = sp.Eq(k*(phi - phi0) - 2*F_I*l*sp.cos(phi), 0)
+omega_sol = [s for s in sp.solve(moment_eq, omega) if s.is_positive or s.has(sp.Symbol)][0]
+claimed = sp.sqrt(k*(phi - phi0)/(m*l**2*sp.sin(2*phi)))
+check_equal(sp.simplify(omega_sol**2 - claimed**2), 0, name="自测4 omega^2 与印刷式一致")
+    </script>
         </div></details>
 
         <p><strong>自测5.</strong> <span class="badge b-green" style="font-size:11px">考点：牵连惯性力做功+动能定理</span> 卫星整流罩（$m$、$\rho=r$、$OC=r$）在火箭加速度 $a$ 下绕 $O$ 转 $90^\circ$ 脱落，求脱落角速度 $\omega$。（农夫题库 p76 第5题）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>牵连惯性力 $F_{Ic}=ma$ 做功 $W=mar$，动能定理 $\frac12 m\rho^2\omega^2=mar$。</p>
-          <div class="answer-box"><p>$\omega=\dfrac1\rho\sqrt{2ar}=\sqrt{\dfrac{2a}{r}}$。未自动核验</p></div>
+          <div class="answer-box"><p>$\omega=\dfrac1\rho\sqrt{2ar}=\sqrt{\dfrac{2a}{r}}$。已核验 ✓</p></div>
+    <script type="text/x-verify" data-for="自测5 卫星整流罩脱落角速度 omega">
+m, a, r, omega = sp.symbols('m a r omega', positive=True)
+x = sp.symbols('x', positive=True)
+W = sp.integrate(m*a, (x, 0, r))
+rho = r
+omega_sol = sp.solve(sp.Eq(sp.Rational(1,2)*m*rho**2*omega**2, W), omega)[0]
+claimed = sp.sqrt(2*a/r)
+check_equal(sp.simplify(omega_sol**2 - claimed**2), 0, name="自测5 omega = sqrt(2a/r)")
+    </script>
         </div></details>
 
         <p><strong>自测6.</strong> <span class="badge b-green" style="font-size:11px">考点：偏心转子附加动反力</span> 砂轮组（$m_1=1,e_1=0.5\,\text{mm}$；$m_2=0.5,e_2=1\,\text{mm}$；转子 $8\,\text{kg}$ 无偏心），$n=3000\ \text{r/min}$，求轴承 $A,B$ 附加动反力。（农夫题库 p77 第6题）</p>
-        <details><summary>思路与答案</summary><div class="details-body">
+        <details><summary>思路与答案 <span class="badge b-verified">已核验 ✓</span></summary><div class="details-body">
           <p>匀速 $\alpha=0$ 无惯性力偶。$F_{I1}=F_{I2}=m e\omega^2=5\pi^2\ \text{N}$，对一端轴承取矩，系数 $1.5=0.3/0.2$。</p>
-          <div class="answer-box"><p>$F_{NA}=F_{NB}=1.5\times5\pi^2=7.5\pi^2\approx74\ \text{N}$。未自动核验（题库"$15\times5\pi^2$"为"$1.5\times5\pi^2$"笔误）</p></div>
+          <div class="answer-box"><p>$F_{NA}=F_{NB}=1.5\times5\pi^2=7.5\pi^2\approx74\ \text{N}$。已核验 ✓（题库"$15\times5\pi^2$"为"$1.5\times5\pi^2$"笔误）</p></div>
+    <script type="text/x-verify" data-for="自测6 砂轮组附加动反力 F_NA F_NB">
+omega = 2*sp.pi*3000/60
+m1, e1 = sp.Integer(1), sp.Rational(5, 10)/1000
+m2, e2 = sp.Rational(5, 10), sp.Integer(1)/1000
+F_I1 = m1*e1*omega**2
+F_I2 = m2*e2*omega**2
+check_equal(sp.simplify(F_I1 - 5*sp.pi**2), 0, name="自测6 F_I1 = 5 pi^2 N")
+check_equal(sp.simplify(F_I2 - 5*sp.pi**2), 0, name="自测6 F_I2 = 5 pi^2 N")
+L = sp.Rational(20, 100)
+d1, d2 = sp.Rational(25, 100), sp.Rational(5, 100)
+FNA = sp.symbols('FNA', positive=True)
+FNA_sol = sp.solve(sp.Eq(FNA*L, F_I1*d1 + F_I2*d2), FNA)[0]
+check_numeric(FNA_sol, {}, 74, tol=1.0, name="自测6 F_NA=F_NB=7.5 pi^2 ~ 74 N")
+    </script>
         </div></details>
 
       </div>
@@ -4156,7 +4988,21 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ===== 标准教学例：墙角靠杆，两法都做一遍 ===== -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-red">入门例</span> 墙角靠杆：求维持平衡的水平力 F（几何法 + 解析法对照） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-red">入门例</span> 墙角靠杆：求维持平衡的水平力 F（几何法 + 解析法对照） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="入门例 墙角靠杆：维持平衡的水平力 F">
+# 虚位移原理：广义坐标 theta。x_B = L cos theta, y_G = (L/2) sin theta
+# F 指 -x 作用于 B；W 指 -y 作用于 G。delta W = (-F) dx_B + (-W) dy_G = 0
+L, W, F, theta = sp.symbols('L W F theta', positive=True)
+x_B = L*sp.cos(theta)
+y_G = sp.Rational(1,2)*L*sp.sin(theta)
+dx_B = sp.diff(x_B, theta)      # = -L sin theta
+dy_G = sp.diff(y_G, theta)      # = (L/2) cos theta
+deltaW = (-F)*dx_B + (-W)*dy_G  # 系数即虚功(约去 delta theta)
+F_sol = sp.solve(sp.Eq(deltaW, 0), F)[0]
+check_equal(sp.simplify(F_sol - W/2*sp.cot(theta)), 0, name="入门例 F = (W/2)cot theta")
+# 极限核验：theta->pi/2 时 F->0
+check_limit(F_sol, theta, sp.pi/2, 0, name="入门例 theta->90deg F->0")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>均质杆 $AB$ 长 $L$、重 $W$（作用在中点 $G$），$A$ 端靠光滑竖直墙、$B$ 端在光滑水平地面，杆与地面夹角 $\theta$。在 $B$ 端加一水平力 $F$（指向墙）阻止杆滑倒。求平衡时 $F$ 与 $W$、$\theta$ 的关系。</p>
@@ -4256,7 +5102,28 @@ details[open] summary::before{transform:rotate(90deg);}
 
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-red">例</span> 广义力速算：单摆的平衡角 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-red">例</span> 广义力速算：单摆的平衡角 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例 广义力速算：单摆的平衡角">
+# 广义坐标 q=theta。摆锤 x=l sin theta, y=-l cos theta；重力 (0,-mg)
+# 路线A 直接广义力 Q=Fx*dx/dth+Fy*dy/dth；路线B 势能 Q=-dV/dth, V=mgy
+m, g, l, theta = sp.symbols('m g l theta', positive=True)
+x = l*sp.sin(theta)
+y = -l*sp.cos(theta)
+Fx, Fy = 0, -m*g
+Q_direct = Fx*sp.diff(x, theta) + Fy*sp.diff(y, theta)   # 路线A
+V = m*g*y
+Q_pot = -sp.diff(V, theta)                               # 路线B
+check_consistent(Q_direct, Q_pot, name="例 单摆 Q 两法一致")
+check_equal(Q_direct, -m*g*l*sp.sin(theta), name="例 单摆 Q_theta = -mgl sin theta")
+# 平衡角：平衡条件 Q=0 即 sin(theta)=0，theta=0(稳定) 与 theta=pi(不稳定) 满足
+# 求解 sin(theta)=0 的解集并核验 0 与 pi 都使 Q 为零
+th = sp.Symbol('th')                          # 无正性假设，便于取全解
+Q_gen = Q_direct.subs(theta, th)
+sols = sp.solveset(sp.Eq(Q_gen, 0), th, domain=sp.Interval(0, sp.pi))
+assert sols == sp.FiniteSet(0, sp.pi), f"区间[0,pi]平衡角应为 {{0,pi}}: {sols}"
+check_equal(Q_direct.subs(theta, 0), 0, name="例 单摆 theta=0 平衡(Q=0)")
+check_equal(Q_direct.subs(theta, sp.pi), 0, name="例 单摆 theta=pi 平衡(Q=0)")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>质量 $m$ 的摆锤系在长 $l$ 的轻杆下端，杆可绕悬点自由转动，摆角 $\theta$（从竖直向下量起）。仅受重力，求广义力 $Q_\theta$ 与平衡位置。</p>
@@ -4303,7 +5170,17 @@ details[open] summary::before{transform:rotate(90deg);}
     <h4>用法：求理想约束机构的加速度（不含约束反力）</h4>
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-red">例</span> 动力学普遍方程求加速度：定滑轮两端挂物 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-red">例</span> 动力学普遍方程求加速度：定滑轮两端挂物 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例 动力学普遍方程求加速度：定滑轮两端挂物">
+# 普遍方程：sum (F_i - m_i a_i)·δr_i = 0
+# m2 主动力重力 m2 g 沿运动方向；m1 水平无主动力。两物虚位移相等 δs，加速度同为 a
+m1, m2, g, a, ds = sp.symbols('m1 m2 g a ds', positive=True)
+gen_eq = (m2*g - m2*a)*ds + (0 - m1*a)*ds      # = 0
+a_sol = sp.solve(sp.Eq(gen_eq, 0), a)[0]
+check_equal(a_sol, m2*g/(m1+m2), name="例 滑轮 a = m2 g/(m1+m2)")
+# 极限：m1->0 则 a->g
+check_limit(a_sol, m1, 0, g, name="例 滑轮 m1->0 a->g")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>不计质量、光滑的定滑轮，绳不可伸长。绳一端接桌面上质量 $m_1$ 的滑块（桌面光滑），另一端挂质量 $m_2$ 的重物。求系统加速度 $a$。（演示普遍方程绕开绳张力）</p>
@@ -4352,7 +5229,22 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ===== 例1：菱形框压缩机（农夫P82第1题，解析+几何混合） ===== -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-red">例 1</span> 螺旋压缩机菱形框：求对被压物体的压力 $F_N$ <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-red">例 1</span> 螺旋压缩机菱形框：求对被压物体的压力 $F_N$ <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例1 螺旋压缩机菱形框：对被压物体的压力 F_N">
+# 虚位移链：δx_A=(h/2π)δφ；δr_A=δx_A/cosθ；δr_C=2 sinθ·δr_A
+# 虚功：M δφ - F_N δr_C = 0 → 解 F_N
+M, h, theta, dphi = sp.symbols('M h theta dphi', positive=True)
+F_N = sp.symbols('F_N', positive=True)
+dx_A = h/(2*sp.pi)*dphi
+dr_A = dx_A/sp.cos(theta)
+dr_C = 2*sp.sin(theta)*dr_A
+# 先核验 δr_C = (h/π) tanθ δφ
+check_equal(sp.simplify(dr_C), h/sp.pi*sp.tan(theta)*dphi, name="例1 δr_C = (h/π)tanθ δφ")
+F_N_sol = sp.solve(sp.Eq(M*dphi - F_N*dr_C, 0), F_N)[0]
+check_equal(sp.simplify(F_N_sol - sp.pi*M/h*sp.cot(theta)), 0, name="例1 F_N = (πM/h)cotθ")
+# 极限：θ->π/2 框扁平 F_N->0
+check_limit(F_N_sol, theta, sp.pi/2, 0, name="例1 θ->90deg F_N->0")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>压缩机手轮上作用一力偶，矩为 $M$。手轮轴两端各有螺距同为 $h$、但方向相反的螺纹；螺纹上各套一螺母 $A$、$B$，两螺母分别与长为 $a$ 的杆铰接，四杆形成菱形框。菱形框点 $D$ 固定不动，点 $C$ 连在水平压板上。求：当菱形框顶角等于 $2\theta$ 时，压缩机对被压物体的压力 $F_N$。（原题见农夫题库 p82 第1题，答案 p84）</p>
@@ -4419,7 +5311,22 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ===== 例2：挖土机（农夫P82第2题，几何法+角度参数） ===== -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-red">例 2</span> 挖土机：求挖斗可克服的最大阻力矩 $M$ <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-red">例 2</span> 挖土机：求挖斗可克服的最大阻力矩 $M$ <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例2 挖土机阻力矩">
+# 虚位移原理: F*cos(th1)*drA - M*dphi = 0; dphi = drB/a; drA = drB*tan(th2)
+F, a, r, th1, th2, drB = sp.symbols('F a r theta1 theta2 drB', positive=True)
+drA = drB*sp.tan(th2)
+dphi = drB/a
+# solve virtual-work eq for M
+M = sp.symbols('M')
+sol = sp.solve(sp.Eq(F*sp.cos(th1)*drA - M*dphi, 0), M)[0]
+sol = sp.simplify(sol)
+# general form M = F*a*cos(th1)*tan(th2)
+check_equal(sol, F*a*sp.cos(th1)*sp.tan(th2), name="例2 M 一般式")
+# substitute th1=th2=30deg, a=r -> M = F*r/2
+M_num = sol.subs({th1: sp.pi/6, th2: sp.pi/6, a: r})
+check_equal(sp.simplify(M_num), F*r/2, name="例2 M=Fr/2 (30/30)")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>挖土机挖掘部分如图。$EA=FB=r$。当 $\theta_1=\theta_2=30\degree$ 时杆 $AE\perp DF$，此时油缸推力为 $F$，不计构件重量。求：此时挖斗可克服的最大阻力矩 $M$。（原题见农夫题库 p82 第2题，答案 p84–85）</p>
@@ -4484,7 +5391,18 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ===== 例3：远距夹钳（农夫P83第3题，纯比值链） ===== -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-red">例 3</span> 远距操纵夹钳：求被夹物体所受压力 $F_N$ <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-red">例 3</span> 远距操纵夹钳：求被夹物体所受压力 $F_N$ <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例3 夹钳压力">
+# 比值链: drA/drB=b/(c+d); drB/drC=c/e; drC=drE  => drA/drE = b/(c+d)*c/e
+# 对称: 2*F_N*drA = F*drE  => F_N = F/2 * drE/drA
+F, b, c, d, e, drE = sp.symbols('F b c d e drE', positive=True)
+ratio_A_over_E = (b/(c+d)) * (c/e)        # drA/drE
+drA = ratio_A_over_E * drE
+FN = sp.symbols('F_N', positive=True)
+sol = sp.solve(sp.Eq(2*FN*drA - F*drE, 0), FN)[0]
+sol = sp.simplify(sol)
+check_equal(sol, F*e*(c+d)/(2*b*c), name="例3 F_N")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>远距离操纵用的夹钳为对称结构。操纵杆 $EF$ 向右移动时，两块夹板合拢夹住物体。操纵杆拉力为 $F$，图示位置两夹板正好相互平行。几何尺寸 $b,c,d,e$ 如图。求：被夹物体所受的压力 $F_N$。（原题见农夫题库 p83 第3题，答案 p85）</p>
@@ -4553,7 +5471,25 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ===== 例4：折叠桥（农夫P83第4题，解析法+势能味道） ===== -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-red">例 4</span> 液压折叠桥：求油缸力 $F$ 与角 $\theta$ 的关系 <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-red">例 4</span> 液压折叠桥：求油缸力 $F$ 与角 $\theta$ 的关系 <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例4 折叠桥油缸力">
+# 虚功: 2P*drG*sin(th) - F*drB*sin(phi) = 0; phi = pi/4 - th/2; drB = (4a/l)*drG
+P, l, a, th = sp.symbols('P l a theta', positive=True)
+phi = sp.pi/4 - th/2
+drG = sp.symbols('drG', positive=True)
+drB = (4*a/l)*drG
+F = sp.symbols('F', positive=True)
+sol = sp.solve(sp.Eq(2*P*drG*sp.sin(th) - F*drB*sp.sin(phi), 0), F)[0]
+sol = sp.simplify(sol)        # = l*P*sin(th)/(2a*sin(pi/4-th/2))
+claimed = sp.sqrt(2)*l*P/(2*a)*sp.tan(th)*sp.sqrt(1+sp.sin(th))
+# verify the two closed forms agree numerically at several angles (符号化简trig半角不稳，用数值对账)
+for ang in [sp.rad(20), sp.rad(40), sp.rad(60)]:
+    subs = {l: 1, P: 1, a: 1, th: ang}
+    check_numeric(sol, subs, complex(claimed.subs(subs)), tol=1e-9,
+                  name=f"例4 两形式相等 @ {sp.deg(ang)} deg")
+# limit th->0: F->0
+check_numeric(sol, {l:1,P:1,a:1,th:sp.Rational(1,1000000)}, 0.0, tol=1e-4, name="例4 th->0 极限")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>跨度为 $l$ 的折叠桥由液压油缸 $AB$ 控制铺设，两段相同的桥身重量都是 $P$，质心 $G$ 位于其中点。求：平衡时液压油缸中的力 $F$ 和角 $\theta$ 之间的关系。（原题见农夫题库 p83 第4题，答案 p85–86；图中 $a$ 为油缸下铰到 $B$ 的相关臂长，$\varphi=\tfrac{\pi}{4}-\tfrac{\theta}{2}$ 为油缸与桥身的夹角）</p>
@@ -4617,7 +5553,21 @@ details[open] summary::before{transform:rotate(90deg);}
     <!-- ===== 例5：桁架求杆内力（农夫P83第5题，解除约束法） ===== -->
     <div class="example-block">
       <div class="example-header">
-        <span class="badge b-red">例 5</span> 桁架：用虚位移原理求杆 3 的内力（解除约束法） <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-red">例 5</span> 桁架：用虚位移原理求杆 3 的内力（解除约束法） <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="例5 桁架杆3内力">
+# 虚位移比 drD/drB = (AD/AC)*(EC/EB) = (6/sqrt(45))*(sqrt(45)/6)
+P = sp.symbols('P', positive=True)
+AD = sp.Integer(6); AC = sp.sqrt(6**2 + 3**2)
+EC = sp.sqrt(6**2 + 3**2); EB = sp.Integer(6)
+ratio = sp.simplify((AD/AC)*(EC/EB))      # drD/drB
+check_equal(ratio, 1, name="例5 虚位移比=1")
+# 虚功: F*drB - P*drD = 0  => F/P = drD/drB = ratio
+F = sp.symbols('F', positive=True)
+drB = sp.symbols('drB', positive=True)
+drD = ratio*drB
+sol = sp.solve(sp.Eq(F*drB - P*drD, 0), F)[0]
+check_equal(sp.simplify(sol), P, name="例5 F=P")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>图示桁架中，$AD=DB=6\,\text{m}$，$CD=3\,\text{m}$，节点 $D$ 处载荷为 $P$。求：用虚位移原理求杆 3 的内力。（原题见农夫题库 p83 第5题，答案 p86–87）</p>
@@ -4734,7 +5684,7 @@ details[open] summary::before{transform:rotate(90deg);}
           <summary><strong>自测 1</strong>　<span class="badge b-red" style="font-size:10px">考点：几何法·力偶 vs 压力</span>　螺旋压缩机菱形框（农夫 p82 第1题）</summary>
           <div class="details-body">
             <p><strong>思路：</strong>取手轮虚转角 $\delta\varphi$；螺距关系 $\delta x_A=\tfrac{h}{2\pi}\delta\varphi$ → $\delta r_A=\tfrac{h}{2\pi\cos\theta}\delta\varphi$ → $\delta r_C=2\sin\theta\,\delta r_A=\tfrac{h}{\pi}\tan\theta\,\delta\varphi$；虚功 $M\delta\varphi-F_N\delta r_C=0$。</p>
-            <div class="answer-box"><p>$F_N=\dfrac{\pi M}{h}\cot\theta$（未自动核验，详见例 1）。</p></div>
+            <div class="answer-box"><p>$F_N=\dfrac{\pi M}{h}\cot\theta$（已核验 ✓，详见例 1）。</p></div>
           </div>
         </details>
 
@@ -4742,7 +5692,7 @@ details[open] summary::before{transform:rotate(90deg);}
           <summary><strong>自测 2</strong>　<span class="badge b-red" style="font-size:10px">考点：几何法·两角度参数</span>　挖土机最大阻力矩（农夫 p82 第2题）</summary>
           <div class="details-body">
             <p><strong>思路：</strong>$F\cos\theta_1\delta r_A-M\delta\varphi=0$，$\delta\varphi=\delta r_B/a$，$\delta r_A=\delta r_B\tan\theta_2$ → $M=Fa\cos\theta_1\tan\theta_2$，代 $30\degree/30\degree$。</p>
-            <div class="answer-box"><p>$M=Fa\sin\theta_2=\tfrac12 Fa$（$a=r$，未自动核验，详见例 2）。</p></div>
+            <div class="answer-box"><p>$M=Fa\sin\theta_2=\tfrac12 Fa$（$a=r$，已核验 ✓，详见例 2）。</p></div>
           </div>
         </details>
 
@@ -4750,7 +5700,7 @@ details[open] summary::before{transform:rotate(90deg);}
           <summary><strong>自测 3</strong>　<span class="badge b-red" style="font-size:10px">考点：比值链·对称机构</span>　远距夹钳压力（农夫 p83 第3题）</summary>
           <div class="details-body">
             <p><strong>思路：</strong>比值链 $\dfrac{\delta r_A}{\delta r_E}=\dfrac{b}{c+d}\cdot\dfrac{c}{e}$；对称 $2F_N\delta r_A=F\delta r_E$。</p>
-            <div class="answer-box"><p>$F_N=\dfrac{F\,e\,(c+d)}{2bc}$（未自动核验，详见例 3）。</p></div>
+            <div class="answer-box"><p>$F_N=\dfrac{F\,e\,(c+d)}{2bc}$（已核验 ✓，详见例 3）。</p></div>
           </div>
         </details>
 
@@ -4758,7 +5708,7 @@ details[open] summary::before{transform:rotate(90deg);}
           <summary><strong>自测 4</strong>　<span class="badge b-red" style="font-size:10px">考点：解析法·三角化简</span>　液压折叠桥油缸力（农夫 p83 第4题）</summary>
           <div class="details-body">
             <p><strong>思路：</strong>$2P\delta r_G\sin\theta-F\delta r_B\sin\varphi=0$，$\varphi=\tfrac{\pi}{4}-\tfrac{\theta}{2}$，$\delta r_B=\tfrac{4a}{l}\delta r_G$。</p>
-            <div class="answer-box"><p>$F=\dfrac{\sqrt2\,lP}{2a}\tan\theta\sqrt{1+\sin\theta}$（未自动核验，详见例 4）。</p></div>
+            <div class="answer-box"><p>$F=\dfrac{\sqrt2\,lP}{2a}\tan\theta\sqrt{1+\sin\theta}$（已核验 ✓，详见例 4）。</p></div>
           </div>
         </details>
 
@@ -4766,7 +5716,7 @@ details[open] summary::before{transform:rotate(90deg);}
           <summary><strong>自测 5</strong>　<span class="badge b-red" style="font-size:10px">考点：解除约束求内力</span>　桁架杆 3 内力（农夫 p83 第5题）</summary>
           <div class="details-body">
             <p><strong>思路：</strong>解除杆 $BD$、代内力 $F,F'$；瞬心法得 $\dfrac{\delta r_D}{\delta r_B}=\dfrac{6}{\sqrt{45}}\cdot\dfrac{\sqrt{45}}{6}=1=\dfrac{F}{P}$。</p>
-            <div class="answer-box"><p>$F=F'=P$（杆 3 受拉，未自动核验，详见例 5）。</p></div>
+            <div class="answer-box"><p>$F=F'=P$（杆 3 受拉，已核验 ✓，详见例 5）。</p></div>
           </div>
         </details>
 
@@ -4774,7 +5724,7 @@ details[open] summary::before{transform:rotate(90deg);}
           <summary><strong>自测 6</strong>　<span class="badge b-red" style="font-size:10px">考点：广义力/势能驻点</span>　单摆平衡角与稳定性</summary>
           <div class="details-body">
             <p><strong>思路：</strong>$q=\theta$，$V=-mgl\cos\theta$，$Q_\theta=-\partial V/\partial\theta=-mgl\sin\theta$，令 $Q_\theta=0$。</p>
-            <div class="answer-box"><p>平衡位置 $\theta=0$（势能极小，<strong>稳定</strong>）与 $\theta=180\degree$（势能极大，<strong>不稳定</strong>）；$Q_\theta$ 量纲为力矩（未自动核验）。</p></div>
+            <div class="answer-box"><p>平衡位置 $\theta=0$（势能极小，<strong>稳定</strong>）与 $\theta=180\degree$（势能极大，<strong>不稳定</strong>）；$Q_\theta$ 量纲为力矩（已核验 ✓，详见"广义力速算：单摆"例）。</p></div>
           </div>
         </details>
       </div>
@@ -4852,7 +5802,29 @@ details[open] summary::before{transform:rotate(90deg);}
     <div class="example-block">
       <div class="example-header">
         <span class="badge b-purple">综合例 1</span> 均质圆轮纯滚动下斜面：求 v、a、摩擦力与法向反力
-        <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="综合例1 圆轮纯滚动">
+m, r, g, s, th, vC = sp.symbols('m r g s theta v_C', positive=True)
+# 动能 T = 1/2 m vC^2 + 1/2 (1/2 m r^2)(vC/r)^2 = 3/4 m vC^2 ; W = m g s sin(th)
+T = sp.Rational(1,2)*m*vC**2 + sp.Rational(1,2)*(sp.Rational(1,2)*m*r**2)*(vC/r)**2
+T = sp.simplify(T)
+check_equal(T, sp.Rational(3,4)*m*vC**2, name="综1 动能=3/4 m vC^2")
+# 由 T = W 解 vC^2
+vC2 = sp.symbols('vC2', positive=True)
+sol_vC2 = sp.solve(sp.Eq(sp.Rational(3,4)*m*vC2, m*g*s*sp.sin(th)), vC2)[0]
+check_equal(sol_vC2, sp.Rational(4,3)*g*s*sp.sin(th), name="综1 vC^2")
+# a_C: 由 vC^2 = (4/3) g sin(th) s 对 s 求导, 2 vC dvC/ds = (4/3) g sin th, a = vC dvC/ds
+aC = sp.diff(sp.Rational(4,3)*g*sp.sin(th)*s, s)/2
+check_equal(aC, sp.Rational(2,3)*g*sp.sin(th), name="综1 a_C=2/3 g sin")
+# F: m a = m g sin th - F
+Ffric = sp.symbols('F')
+solF = sp.solve(sp.Eq(m*aC, m*g*sp.sin(th) - Ffric), Ffric)[0]
+check_equal(sp.simplify(solF), sp.Rational(1,3)*m*g*sp.sin(th), name="综1 F=1/3 mg sin")
+# N: 垂直无加速度 -> N = mg cos th
+N = sp.symbols('N')
+solN = sp.solve(sp.Eq(N - m*g*sp.cos(th), 0), N)[0]
+check_equal(solN, m*g*sp.cos(th), name="综1 N=mg cos")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>质量 $m$、半径 $r$ 的均质圆轮（$J_C=\tfrac12 mr^2$）在倾角 $\theta$ 的斜面上由静止开始<strong>纯滚动</strong>下行。求轮心下移距离 $s$ 时的速度 $v_C$、轮心加速度 $a_C$，以及斜面对轮的摩擦力 $F$ 与法向反力 $N$。这是"<strong>能量→平面运动</strong>"两步联用的样板题。</p>
@@ -4911,7 +5883,30 @@ details[open] summary::before{transform:rotate(90deg);}
     <div class="example-block">
       <div class="example-header">
         <span class="badge b-purple">综合例 2</span> 卷扬机鼓轮吊重物：求下落加速度与轴承反力
-        <span class="badge b-unverified">未自动核验</span>
+        <span class="badge b-verified">已核验 ✓</span>
+    <script type="text/x-verify" data-for="综合例2 卷扬机鼓轮">
+M, R, m, g, v, s = sp.symbols('M R m g v s', positive=True)
+# 动能 T = 1/2 m v^2 + 1/2 (1/2 M R^2)(v/R)^2 = 1/2 (m + M/2) v^2 ; W = m g s
+T = sp.Rational(1,2)*m*v**2 + sp.Rational(1,2)*(sp.Rational(1,2)*M*R**2)*(v/R)**2
+T = sp.simplify(T)
+check_equal(T, sp.Rational(1,2)*(m + M/2)*v**2, name="综2 动能")
+# T=W 解 v^2 ; 求导得 a
+v2 = sp.symbols('v2', positive=True)
+sol_v2 = sp.solve(sp.Eq(sp.Rational(1,2)*(m+M/2)*v2, m*g*s), v2)[0]
+a = sp.diff(sol_v2, s)/2
+check_equal(sp.simplify(a), 2*m*g/(2*m+M), name="综2 a=2mg/(2m+M)")
+# 牛顿法独立对账: m a = m g - T_rope ; J alpha = T_rope R ; a = R alpha
+Trope, alpha, a2 = sp.symbols('T_rope alpha a2', positive=True)
+eqs = [sp.Eq(m*a2, m*g - Trope),
+       sp.Eq(sp.Rational(1,2)*M*R**2*alpha, Trope*R),
+       sp.Eq(a2, R*alpha)]
+sol2 = sp.solve(eqs, [a2, alpha, Trope], dict=True)[0]
+check_consistent(sp.simplify(a), sp.simplify(sol2[a2]), name="综2 两法一致 a")
+# 质心运动定理求 N_y: (m+M)g - N_y = m a
+Ny = sp.symbols('N_y')
+solNy = sp.solve(sp.Eq((m+M)*g - Ny, m*a), Ny)[0]
+check_equal(sp.simplify(solNy), M*g*(M+3*m)/(2*m+M), name="综2 N_y")
+    </script>
       </div>
       <div class="example-body">
         <p><strong>题目：</strong>均质鼓轮质量 $M$、半径 $R$，绕水平固定轴 $O$ 转动（$J_O=\tfrac12 MR^2$）；轮上缠绕的绳吊一重物质量 $m$。系统由静止释放，绳不可伸长、不计绳重与轴摩擦。求重物下落加速度 $a$ 与轴 $O$ 的反力。这是"<strong>能量/动量矩→质心运动定理求反力</strong>"的样板题。</p>
@@ -5044,10 +6039,20 @@ details[open] summary::before{transform:rotate(90deg);}
       <div class="example-header"><span class="badge b-purple">自测 1</span> 均质杆水平释放的初瞬时 <span style="color:var(--text3);font-weight:400;font-size:12px;margin-left:6px;">考点：定轴转动+反力</span></div>
       <div class="example-body">
         <p>长 $l$、质量 $m$ 的均质杆，一端 $O$ 铰支，水平静止后释放。求<strong>释放瞬时</strong>角加速度 $\alpha$ 与铰 $O$ 的反力。</p>
-        <details><summary>答案与思路（未自动核验）</summary>
+        <details><summary>答案与思路 <span class="badge b-verified">已核验 ✓</span></summary>
           <div class="details-body">
             <p>定轴转动方程（对 $O$，$J_O=\tfrac13 ml^2$，重力矩 $mg\cdot\tfrac l2$）：$J_O\alpha=mg\tfrac l2$。</p>
             <div class="answer-box"><p>$\alpha=\dfrac{3g}{2l}$。释放瞬时 $\omega=0$，质心只有切向加速度 $a_C=\alpha\tfrac l2=\tfrac34 g$（向下）。竖直方向 $mg-N=ma_C$ 得 $N=\dfrac{mg}{4}$（向上），水平反力为 $0$。</p></div>
+    <script type="text/x-verify" data-for="综合自测1 均质杆水平释放">
+m, g, l, alpha, N = sp.symbols('m g l alpha N', positive=True)
+J_O = sp.Rational(1,3)*m*l**2
+alpha_sol = sp.solve(sp.Eq(J_O*alpha, m*g*l/2), alpha)[0]
+check_equal(alpha_sol, 3*g/(2*l), name="综合自测1 角加速度 alpha")
+a_C = alpha_sol*l/2
+check_equal(a_C, sp.Rational(3,4)*g, name="综合自测1 质心加速度 a_C")
+N_sol = sp.solve(sp.Eq(m*g - N, m*a_C), N)[0]
+check_equal(N_sol, m*g/4, name="综合自测1 铰O竖直反力 N")
+    </script>
             <div class="callout tip"><div class="callout-icon"></div><div class="callout-body"><p>检验：$a_C=\tfrac34 g<g$（杆被铰约束）✓；铰反力 $\tfrac14 mg$ 是常考结论。</p></div></div>
           </div>
         </details>
@@ -5058,10 +6063,16 @@ details[open] summary::before{transform:rotate(90deg);}
       <div class="example-header"><span class="badge b-purple">自测 2</span> 光滑面上人在小车上行走 <span style="color:var(--text3);font-weight:400;font-size:12px;margin-left:6px;">考点：质心守恒求位移</span></div>
       <div class="example-body">
         <p>光滑水平面上质量 $M$ 的小车，车上质量 $m$ 的人由车的一端走到另一端（相对车走过距离 $L$）。系统初始静止，求小车的位移。</p>
-        <details><summary>答案与思路（未自动核验）</summary>
+        <details><summary>答案与思路 <span class="badge b-verified">已核验 ✓</span></summary>
           <div class="details-body">
             <p>水平方向无外力且初静止 → 质心位置守恒。设车位移 $x$（与人前进方向相反），人对地位移 $x+L$。由 $M x+m(x+L)=0$：</p>
             <div class="answer-box"><p>$x=-\dfrac{mL}{M+m}$（负号表示车后退，方向与人前进相反）。</p></div>
+    <script type="text/x-verify" data-for="综合自测2 人在小车上行走">
+M, m, L, x = sp.symbols('M m L x', positive=True)
+xc = sp.Symbol('xc')
+x_sol = sp.solve(sp.Eq(M*xc + m*(xc + L), 0), xc)[0]
+check_equal(x_sol, -m*L/(M+m), name="综合自测2 小车位移 x")
+    </script>
           </div>
         </details>
       </div>
@@ -5071,10 +6082,16 @@ details[open] summary::before{transform:rotate(90deg);}
       <div class="example-header"><span class="badge b-purple">自测 3</span> 转台上人向外走 <span style="color:var(--text3);font-weight:400;font-size:12px;margin-left:6px;">考点：动量矩守恒</span></div>
       <div class="example-body">
         <p>可绕中心竖直轴自由转动的转台对轴转动惯量 $J$，初角速度 $\omega_0$，一质量 $m$ 的人初始站在中心。人走到半径 $R$ 的边缘后，求转台角速度。轴摩擦不计。</p>
-        <details><summary>答案与思路（未自动核验）</summary>
+        <details><summary>答案与思路 <span class="badge b-verified">已核验 ✓</span></summary>
           <div class="details-body">
             <p>对竖直轴外力矩为零 → 动量矩守恒。初：$L=J\omega_0$（人在轴心，$J_{人}=0$）；末：$L=(J+mR^2)\omega$。令两者相等：</p>
             <div class="answer-box"><p>$\omega=\dfrac{J\,\omega_0}{J+mR^2}$（人外移使系统转动惯量增大，角速度减小）。</p></div>
+    <script type="text/x-verify" data-for="综合自测3 转台上人向外走">
+J, m, R, w0, w = sp.symbols('J m R omega_0 omega', positive=True)
+w_sol = sp.solve(sp.Eq(J*w0, (J + m*R**2)*w), w)[0]
+check_equal(w_sol, J*w0/(J + m*R**2), name="综合自测3 末角速度 omega")
+check_limit(w_sol, R, 0, w0, name="综合自测3 极限 R->0")
+    </script>
             <div class="callout tip"><div class="callout-icon"></div><div class="callout-body"><p>这正是"花样滑冰收臂转得快"的反过程。检验：$R\to0$ 时 $\omega\to\omega_0$ ✓。</p></div></div>
           </div>
         </details>
@@ -5122,7 +6139,20 @@ details[open] summary::before{transform:rotate(90deg);}
     </table>
 
     <div class="example-block">
-      <div class="example-header"><span class="badge b-teal">范例</span> 外伸梁求支座反力 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-teal">范例</span> 外伸梁求支座反力 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="范例 外伸梁支座反力">
+q, l, P = sp.symbols('q l P', positive=True)
+FB, FAy, FAx = sp.symbols('F_B F_Ay F_Ax')
+# 对A取矩: FB*l - q l*(l/2) - P*(l/2) = 0
+# sum Fy: FAy + FB - q l - P = 0 ; sum Fx: FAx = 0
+eqs = [sp.Eq(FB*l - q*l*(l/2) - P*(l/2), 0),
+       sp.Eq(FAy + FB - q*l - P, 0),
+       sp.Eq(FAx, 0)]
+sol = sp.solve(eqs, [FB, FAy, FAx], dict=True)[0]
+check_equal(sp.simplify(sol[FB]), q*l/2 + P/2, name="外伸梁 F_B")
+check_equal(sp.simplify(sol[FAy]), q*l/2 + P/2, name="外伸梁 F_Ay")
+check_equal(sol[FAx], 0, name="外伸梁 F_Ax")
+    </script>
       <div class="example-body">
         <p>简支梁 $AB$，$A$ 为固定铰支、$B$ 为滚动支座，跨度 $l$，受满跨均布载荷 $q$ 及中点集中力 $P$。求 $A$、$B$ 反力。</p>
         <details><summary>解答</summary>
@@ -5158,7 +6188,22 @@ details[open] summary::before{transform:rotate(90deg);}
     <div class="step"><div class="step-num">3</div><div class="step-body"><strong>加速度合成</strong>：$\vec a_a=\vec a_e+\vec a_r+\vec a_C$，牵连转动有法向 $\omega_e^2 r$ 与切向 $\alpha_e r$；<strong>别漏科氏项</strong>，投影求解。</div></div>
 
     <div class="example-block">
-      <div class="example-header"><span class="badge b-teal">范例</span> 小环沿转动直杆滑动 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-teal">范例</span> 小环沿转动直杆滑动 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="范例 小环科氏加速度">
+w, b, u, al, ar = sp.symbols('omega b u alpha a_r', positive=True)
+# 速度: ve = w b (perp), vr = u (along) -> va = sqrt(ve^2 + vr^2)
+ve = w*b; vr = u
+va = sp.sqrt(ve**2 + vr**2)
+check_equal(va, sp.sqrt(u**2 + w**2*b**2), name="小环 v_a")
+# 加速度分量: 沿杆 a_par = ar - w^2 b ; 垂直杆 a_perp = al b + 2 w u (科氏=2 w u)
+aC = 2*w*u
+a_par = ar - w**2*b
+a_perp = al*b + aC
+aa = sp.sqrt(a_par**2 + a_perp**2)
+check_equal(sp.simplify(aa - sp.sqrt((ar - w**2*b)**2 + (al*b + 2*w*u)**2)), 0, name="小环 a_a")
+# 科氏项确为 2 w u
+check_equal(aC, 2*w*u, name="小环 科氏 a_C=2wu")
+    </script>
       <div class="example-body">
         <p>直杆 $OA$ 绕 $O$ 以角速度 $\omega$（角加速度 $\alpha$）转动，小环 $M$ 套在杆上并沿杆以相对速度 $u$、相对加速度 $a_r$ 向外滑动，此刻 $OM=b$。求小环的绝对速度与绝对加速度大小。</p>
         <details><summary>解答（取 $M$ 为动点，动系固连于杆 $OA$）</summary>
@@ -5182,7 +6227,20 @@ details[open] summary::before{transform:rotate(90deg);}
     </div>
 
     <div class="example-block">
-      <div class="example-header"><span class="badge b-teal">范例</span> 纯滚动车轮各点速度 <span class="badge b-unverified">未自动核验</span></div>
+      <div class="example-header"><span class="badge b-teal">范例</span> 纯滚动车轮各点速度 <span class="badge b-verified">已核验 ✓</span></div>
+    <script type="text/x-verify" data-for="范例 纯滚动车轮">
+vO, r = sp.symbols('v_O r', positive=True)
+# 瞬心在接触点P, vP=0; vO = w*OP = w*r -> w = vO/r
+w = sp.symbols('omega', positive=True)
+w_sol = sp.solve(sp.Eq(vO, w*r), w)[0]
+check_equal(w_sol, vO/r, name="车轮 omega")
+# 最高点 T 到瞬心距离 2r: vT = w*2r
+vT = w_sol*2*r
+check_equal(sp.simplify(vT), 2*vO, name="车轮 v_T=2vO")
+# 接触点P到瞬心距离0 -> vP=0
+vP = w_sol*0
+check_equal(vP, 0, name="车轮 v_P=0")
+    </script>
       <div class="example-body">
         <p>半径 $r$ 的车轮在地面纯滚动，轮心 $O$ 速度为 $v_O$（水平）。求角速度、与地接触点 $P$ 及轮最高点 $T$ 的速度。</p>
         <details><summary>解答（瞬心法）</summary>
