@@ -869,6 +869,8 @@ Reserve `.big-formula.highlight` (bordered, colored background) for the single m
 
 ## SVG Diagram Rules (CRITICAL — do not skip)
 
+**Before drawing: should this be an SVG at all?** If the problem/source already came with a figure, **embed the ORIGINAL image instead of redrawing it** — even if it looks simple (decision rule: `problem-solutions.md` §3). A redraw of a figure you already have only risks dropping an element or misplacing labels. These rules are for the *other* case: a diagram you must draw because there is no source figure.
+
 These rules fix three recurring problems: oversized arrows that obscure labels, unreadable proportions, and **mysterious offset** — elements that each look right on their own but no longer line up because several coordinate mechanisms (viewBox mapping, percentage lengths, CSS transforms, text baselines, marker reference points) got mixed. Stay inside the safe-subset below and the offset stops happening; the arrow/label rules after it handle the other two.
 
 ### SVG-safe-subset (avoid mysterious offset)

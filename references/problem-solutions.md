@@ -84,23 +84,21 @@ Rules:
 
 ---
 
-## 3. Figure decision — SVG vs. embed original (the core MODE C rule)
+## 3. Figure decision — embed the original vs. draw SVG (the core rule)
 
-> **If the problem already came with a figure (photo, scanned diagram, plotted graph, circuit, geometry with many elements) → embed the ORIGINAL image. Only draw SVG when the figure is simple enough that a clean redraw is clearly better and faithful.**
+> **The first question is NOT "is the figure simple?" — it is "did the problem come with a figure of its own?"**
+>
+> **Did the problem come with ANY figure — a textbook/worksheet figure, photo, scan, plotted graph, circuit, mechanism, OR even a simple line sketch (block on incline, cam + follower)? → embed the ORIGINAL image. Do NOT redraw it as SVG, even if it looks simple.** A redraw routinely **drops a key element** (a flat-top 导板 silently becomes a bare rod, so the student can't tell what's pushing the block) or **misplaces labels** (overlapping `N`/`mg`/`α` on a tilted free-body). The faithful original is always safer and costs nothing — an SVG redraw of a figure you already have is pure downside.
+>
+> **Draw inline SVG ONLY when the problem has no figure of its own** — a text-only problem, or a diagram you're adding purely to make a concept easier to grasp. Then keep it minimal and faithful; if you can't reproduce the setup faithfully, **describe it in words instead of shipping a wrong figure.**
 
-Decision checklist — **embed the original image** if ANY is true:
-- [ ] The figure is a photo, scan, or screenshot (not line art).
-- [ ] It contains a data plot / curve / experimental graph.
-- [ ] It has many elements (≳ 6 labeled parts), fine geometry, or precise proportions that matter.
-- [ ] It's a circuit, a complex mechanism, a map, an anatomical/structural diagram.
-- [ ] Redrawing risks changing the problem (angles, lengths, topology must be exact).
-
-**Draw inline SVG** only if ALL are true:
-- [ ] A few lines/shapes (block on incline, two blocks + spring, a single triangle of forces, a simple ray diagram).
-- [ ] No photographic content and no quantitative curve.
-- [ ] You can reproduce it faithfully with the SVG rules in `design-system.md`.
-
-When in doubt → **embed the original.** Never omit a figure the problem depends on, and never invent a figure that wasn't given.
+Decision:
+- **Embed the original** (Section 4) if the problem came with a figure of **any** kind — photo, scan, screenshot, data plot, circuit, mechanism, map, **or a simple line drawing**. If it was in the source, embed it; do not "improve" it into SVG.
+- **Draw inline SVG** only if **ALL** are true:
+  - [ ] The problem came with **no figure of its own** (it's text-only, or the diagram is your own aid for a concept, not a reproduction of a given figure).
+  - [ ] A diagram genuinely helps the reader.
+  - [ ] You can reproduce the setup **faithfully** and simply with the SVG-safe-subset in `design-system.md` — and you've rendered the file and eyeballed it (labels placed, nothing overlapping, every part the problem mentions actually drawn).
+- If you can't draw it faithfully → **describe it in words.** Never omit a figure the problem depends on, never invent a figure that wasn't given, and **never ship an SVG that contradicts the problem.**
 
 ---
 
