@@ -210,7 +210,7 @@ If there are many problems (≈8+) or they are independent of each other, you ma
 2. **Read** `references/design-system.md` before writing any code. For MODE A & MODE B also read `references/workflow-orchestration.md` (the plan→fan-out→verify→assemble workflow). For MODE C / any solutions also read `references/problem-solutions.md`.
 3. **Read inputs**: PDF (Step 0 / `scripts/extract_pdf.py`) and/or problem images.
 4. **Plan → fan-out → verify**: build the TOC + shared spec once, generate one unit per section/problem, and **verify every answer** (blind double-solve + checklist, compute with code) — see §0.5. Write HTML in part files.
-5. **Build + check**: run `scripts/build_and_check.py build <part1> <part2> ... -o <output.html>` to concatenate and run the static checks, then run `scripts/verify_solutions.py <output.html>` to **execute** every verification block, then the five post-generation checks below and the coherence pass. Fix and re-run until clean.
+5. **Build + check**: run `scripts/build_and_check.py build <part1> <part2> ... -o <output.html>` to concatenate and run the static checks, then run `scripts/verify_solutions.py <output.html>` to **execute** every verification block, then the six post-generation checks below (Check 6 hands the file to codex for a semantic proofread, when available) and the coherence pass. Fix and re-run until clean.
 6. **Output** to `<outdir>/<name>.html` and call `present_files`.
 
 ## Content Structure
@@ -312,7 +312,7 @@ way NotebookLM grounds answers in citations.
 
 ## Post-generation Formula Check (MANDATORY before presenting)
 
-Run `scripts/build_and_check.py` first (static lint: Checks 2 & 3 plus div-balance, forbidden-command, and the Check 4 verified-badge scan). Then run `scripts/verify_solutions.py` (Check 5 — it **executes** the verification blocks). Run all five checks below; only present the file when all pass.
+Run `scripts/build_and_check.py` first (static lint: Checks 2 & 3 plus div-balance, forbidden-command, and the Check 4 verified-badge scan). Then run `scripts/verify_solutions.py` (Check 5 — it **executes** the verification blocks). Run all five checks below (static + executable); then, when the codex MCP tool is available, the Check 6 external review. Present the file only after the five pass and you have adjudicated any Check 6 findings.
 
 ### Check 1: KaTeX error spans (runtime)
 
@@ -401,6 +401,42 @@ run (and prints the real value vs. the claimed one); a `已核验` with no passi
 solution or downgrade it to `未自动核验` until this is clean. This is the check that actually catches
 "自信地标了已核验却算错". Full convention: `references/design-system.md` → "已核验 verification — the
 EXECUTABLE gate".
+
+### Check 6: 外部交叉审查 — second-model proofread (catches what sympy can't)
+
+Checks 1–5 are mechanical/symbolic: they catch KaTeX slips, naked Unicode, broken `\boxed{}`, and
+answers whose **numbers** don't recompute. They are structurally blind to errors only a careful reader
+notices — a solution that is numerically "verified" yet **conceptually** wrong, a derivation whose
+Chinese prose contradicts its own formula, a figure that doesn't match the problem, a logical jump
+between steps. (Canonical case: an effective-permeability solution that correctly computes
+$\mu_e\approx91$ from $R_{m0}=(l_1+l_2)/(\mu_0 S)$ — the all-**vacuum** reluctance — while the Chinese
+text labels $R_{m0}$ "同尺寸**全铁心**时磁阻". `sympy` confirms 91; only a reader catches that the
+words contradict the formula — if $R_{m0}$ really were all-iron the ratio would be $\approx0.091$, not
+91.) So, as the **final gate**, hand the finished HTML to a *second model* — OpenAI **codex** via its
+MCP server — to proofread for exactly these sympy-invisible errors.
+
+**Run it only if the `mcp__codex__codex` tool is available** (the codex MCP server is configured in
+this client). If it isn't, skip this check with a one-line note — never block on it; users without
+codex still get their file. One-time setup: `claude mcp add codex -- codex mcp-server` (on Windows
+wrap a non-PATH binary in `cmd /c`, e.g. `-- cmd /c codex mcp-server`; codex must be logged in). Call
+it with the file's **absolute** path:
+
+```
+mcp__codex__codex(
+  prompt: "你是严格的理工科解题审查者。读取并通读 <ABS_PATH>.html，只找符号计算(sympy)查不出的问题：
+           ①解答在概念/物理上是否真的正确  ②步骤间逻辑是否自洽、有无跳步或循环论证
+           ③每处公式与其中文文字说明是否一致（定义、所指对象、介质/条件别写反）
+           ④图与题目/正文是否相符  ⑤量纲与特例是否合理。
+           逐条给出：问题位置（章节/题号）+ 为什么错 + 应改成什么。只报问题，不要重写整篇。",
+  cwd: "<ABS_OUTPUT_DIR>", sandbox: "read-only", approval-policy: "never"
+)
+```
+
+Then **you (not codex) adjudicate** each finding: fix the genuinely-wrong ones, and after any content
+fix **re-run Checks 2–5** (a fix can reintroduce a `\boxed{}`/Unicode slip or invalidate an x-verify
+block). Note anything you judged a false positive and why. codex's review is a second opinion — it does
+**not** grant `已核验` badges (those stay gated by `verify_solutions.py`); it can only prompt you to
+correct or downgrade content. Present the file only after this pass.
 
 Re-run all checks after fixing.
 
