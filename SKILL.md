@@ -250,7 +250,7 @@ flashcards; one card per high-value fact/formula/pitfall.
 ### Within every concept section, cover ALL of the following that apply:
 
 1. **Intuition / physical picture** — analogy, diagram description, or "why this makes sense" before any math. This is mandatory — never lead with a formula.
-2. **Rigorous definition or statement** — precise, in a `.fbox` with LaTeX. Every symbol explained.
+2. **Rigorous definition or statement** — precise, in a `.fbox` with LaTeX. Every symbol explained. Meet the **Rigor standard** below (textbook-grade: full premises, scope, signs/boundaries; standard, consistent terminology).
 3. **Derivation or proof** — full derivation inside a collapsible `<details>` block. Do not skip steps; a student should be able to follow line by line. If multiple derivation routes exist, show the most illuminating one in the collapsible, mention the alternative in text.
 4. **Special cases and limits** — what happens at boundary conditions, extreme values, or degenerate cases. These are high-value for understanding and often tested.
 5. **Worked examples** — start simple (builds confidence), end at exam difficulty. Show every algebraic step. Minimum 2 examples per section; more for computation-heavy topics.
@@ -261,6 +261,17 @@ flashcards; one card per high-value fact/formula/pitfall.
 ### Depth standard
 
 The notes should be detailed enough that a student who has attended lectures but is confused can use these notes alone to fully understand the material. Concreteness beats brevity: one well-explained derivation with intermediate steps is worth more than three terse formula statements.
+
+### Rigor standard — 表述要像教科书一样严谨（贯穿全文，不只例题）
+
+直觉铺垫可以通俗、可以打比方；但凡是**正式内容**——知识点介绍里的定义、定理、性质、条件、结论，以及推导的每一步——都要写到教科书级的严谨。**在生成时就照此写**，而不是等 Check 6 打回来再返工（那样费时费 token）：
+
+- **定义/定理陈述精确完整**：写全前提、适用范围、正负号、边界与例外；不缺条件、不含糊其辞。
+- **术语与记号规范统一**：用学科标准术语和符号，全篇一致；同一量不换名、同一符号不换义、单位写法规范。
+- **不靠"显然""容易看出"掩盖跳步**：该论证的论证，该限定的限定（"当 … 时"），该区分的区分（充分/必要、瞬时/平均、矢量/标量）。
+- **直觉也要正确**：为了好懂而牺牲准确不行——错误的直觉比没有更糟。
+
+这正是 **Check 6** 的第 ⑥ 审查项。生成阶段就守住它，能少一轮外部审查的返工——生成与审查用的是同一套标准。
 
 ## TOC Structure — Hierarchical Outline (MANDATORY)
 
@@ -406,14 +417,15 @@ EXECUTABLE gate".
 
 Checks 1–5 are mechanical/symbolic: they catch KaTeX slips, naked Unicode, broken `\boxed{}`, and
 answers whose **numbers** don't recompute. They are structurally blind to errors only a careful reader
-notices — a solution that is numerically "verified" yet **conceptually** wrong, a derivation whose
-Chinese prose contradicts its own formula, a figure that doesn't match the problem, a logical jump
-between steps. (Canonical case: an effective-permeability solution that correctly computes
+notices — anywhere in the note, concept exposition and worked solutions alike: a statement that is
+**conceptually** wrong, a derivation whose Chinese prose contradicts its own formula, a figure that
+doesn't match the text, a logical jump between steps. (Canonical case: an effective-permeability solution that correctly computes
 $\mu_e\approx91$ from $R_{m0}=(l_1+l_2)/(\mu_0 S)$ — the all-**vacuum** reluctance — while the Chinese
 text labels $R_{m0}$ "同尺寸**全铁心**时磁阻". `sympy` confirms 91; only a reader catches that the
 words contradict the formula — if $R_{m0}$ really were all-iron the ratio would be $\approx0.091$, not
-91.) So, as the **final gate**, hand the finished HTML to a *second model* — OpenAI **codex** via its
-MCP server — to proofread for exactly these sympy-invisible errors.
+91.) So, as the **final gate**, hand the **whole finished note** to a *second model* — OpenAI **codex**
+via its MCP server — to proofread the entire document (knowledge-point exposition included, not just the
+worked problems) for exactly these sympy-invisible errors.
 
 **Run it only if the `mcp__codex__codex` tool is available** (the codex MCP server is configured in
 this client). If it isn't, skip this check with a one-line note — never block on it; users without
@@ -423,12 +435,14 @@ it with the file's **absolute** path:
 
 ```
 mcp__codex__codex(
-  prompt: "你是严格的理工科解题审查者。读取并通读 <ABS_PATH>.html，只找符号计算(sympy)查不出的问题：
-           ①解答在概念/物理上是否真的正确  ②步骤间逻辑是否自洽、有无跳步或循环论证
-           ③每处公式与其中文文字说明是否一致（定义、所指对象、介质/条件别写反）
-           ④图与题目/正文是否相符  ⑤量纲与特例是否合理
+  prompt: "你是严格的理工科学习笔记审查者。读取并通读 <ABS_PATH>.html 的**整篇笔记**——不仅是例题和解答，更包括知识点介绍、概念讲解、定义/定理陈述、推导、正文叙述与所有图。只找符号计算(sympy)查不出的问题：
+           ①任一处内容（概念讲解、定义、定理、推导、例题解答一视同仁）在概念/物理上是否真的正确
+           ②叙述与推导的逻辑是否自洽、有无跳步、循环论证或前后矛盾
+           ③每处公式与其中文文字说明是否一致（定义、所指对象、条件/介质/符号别写反）
+           ④图与正文/题目是否相符
+           ⑤量纲、单位、特例与边界是否合理
            ⑥表述是否达到教科书级的严谨：定义/定理/条件与结论的陈述精确完整（前提、适用范围、正负号、边界不缺不含糊），术语与记号规范统一，无口语化、似是而非或想当然的断言——直觉铺垫可通俗，正式定义与结论必须严谨。
-           逐条给出：问题位置（章节/题号）+ 为什么错 + 应改成什么。只报问题，不要重写整篇。",
+           逐条给出：问题位置（章节/小节/题号）+ 为什么错 + 应改成什么。只报问题，不要重写整篇。",
   cwd: "<ABS_OUTPUT_DIR>", sandbox: "read-only", approval-policy: "never"
 )
 ```
