@@ -5,8 +5,8 @@
 > *「问 AI 一个知识点，得到的是一坨纯文本；公式是源码、推导铺一整屏、手机上还糊成一片。」*
 
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-study--notes-blueviolet)](SKILL.md)
-[![skills.sh](https://img.shields.io/badge/skills.sh-Eric6286%2Fstudy--notes-ff4d4f)](https://skills.sh/Eric6286/study-notes)
-[![ClawHub](https://img.shields.io/badge/ClawHub-eric6286%2Fstudy--notes-7c3aed)](https://clawhub.ai/eric6286/study-notes)
+[![skills.sh](https://img.shields.io/badge/skills.sh-ErikaAlk%2Fstudy--notes-ff4d4f)](https://skills.sh/ErikaAlk/study-notes)
+[![ClawHub](https://img.shields.io/badge/ClawHub-ErikaAlk%2Fstudy--notes-7c3aed)](https://clawhub.ai/ErikaAlk/study-notes)
 [![Runtime](https://img.shields.io/badge/Claude%20Code-ready-blue)](https://claude.com/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -64,13 +64,13 @@
 一行安装（推荐）：
 
 ```bash
-npx skills add Eric6286/study-notes
+npx skills add ErikaAlk/study-notes
 ```
 
 或手动克隆：
 
 ```bash
-git clone https://github.com/Eric6286/study-notes ~/.claude/skills/study-notes
+git clone https://github.com/ErikaAlk/study-notes ~/.claude/skills/study-notes
 ```
 
 装完对 Claude Code 说（可直接复制）：
