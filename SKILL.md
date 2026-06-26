@@ -91,6 +91,63 @@ verification are not.
 
 ---
 
+## 0.6 解题铁律：每一步都讲清「为什么」(WHY-EVERY-STEP — MANDATORY for ALL solutions)
+
+> 用户长期要求，**每次解题都按这个标准、不能偷步漏步**。适用于所有解答输出：MODE C 的每道题、
+> MODE B 的每个作业 worked-example、MODE A 的每个例题，一视同仁。这条与 §0.5"答案必须核验"
+> 是两件**互不替代**的事——核验保证**结论对**，这条保证**过程让人懂**：一道答案正确却跳步的解答，
+> 仍然不合格。
+
+**核心：解答不是把步骤罗列出来，而是把每一步的理由写出来。** 学生看完要能回答"这一步**凭什么**
+这么做"，而不只是"这一步做了什么"。
+
+- **每一步都附理由**：每个推导 / 计算 / 变形 / 取值旁边，都要写清**为什么**——为什么选这个方法、
+  为什么这个等式 / 不等式成立、为什么可以这样放缩 / 换元 / 求和、这个 $N$ 或这个界是怎么定出来的。
+  给依据时**点名所用的定理 / 公式 / 定义**（写出名字或课本编号）。
+- **不偷步、不漏步**：凡是会让学生卡住的一步，就必须在那一步补上可跟随的一行。**禁止用"显然"
+  "易得""同理可证""不难看出"掩盖跳步**——要么把这一步补全，要么说明它依据的是哪条已证结论。
+- **三类「为什么」必须显式出现**：① **方法选择**的理由（为什么用幂级数展开 / 魏尔斯特拉斯判别法 /
+  莱布尼茨余项估计 / 按定义算 $\sup|r_n|$）；② 每个**关键关系**成立的依据（用了 $|\sin t|\le|t|$、
+  等比级数求和、$p$-级数判敛、$1-e^{-nx}\le 1$ …）；③ **结论的逻辑**（$\sup_x|r_n(x)|\to0\Rightarrow$
+  一致收敛；$\sup_x|r_n(x)|\not\to0\Rightarrow$ 不一致收敛——并说明这是"按定义"还是"由某定理"）。
+- **承上启下**：每题解答开头先用一句话点明**思路 / 策略**（"先求和函数，再估余项，最后比较 $\sup$"），
+  让读者知道每一步在整盘棋里的位置；关键转折处说明"为什么走这条路而不是另一条"。
+
+**HTML 落地 —— 解答呈现规范（金标准范本：《理论力学·动力学作业详解》的写法，照此对齐）**
+
+把"为什么"**融进叙述**、像老师边写边讲，**不要**塞进生硬的"为什么：…"标签框（也不要自造 `.why` 类——
+理由融入叙述 + 每式 `.fnote` 已足够，多一层反而割裂）。逐题照此写：
+
+- **步骤要细、用 `.step`，一步一个动作**：识别题型 → 选研究对象 / 建系画受力 → 列方程 → 变形 / 分离变量 →
+  代入初值 → 积分求解 → 反解 → 取极限 / 特例 → 即时小检验……宁可多分几步、每步只做一件事
+  （范本约 **7–8 步/题**，不是 3–4 步）。`step-body` 先一句**加粗的"这一步在干什么"**，紧跟**融入式口语化
+  叙述**把"为什么这么做、为什么这样变形更顺手、用的是哪条原理"讲清楚。
+- **每个公式都配 `.fnote`（范本最突出的一点，务必做到）**：每个 `.fbox` 里的算式下用 `<div class="fnote">`
+  写一行——这一步在做什么（"两边同除以 $m$""分离变量后的形式""代入 $x=v_0t$ 解正根"）或新符号含义
+  （"$\eta$ 阻尼系数，$v=v(t)$ 下落速度，向下为正"）。**不留没有注释的公式。**
+- **点名原理、能链则链**：每用一条定理 / 方法就**写出名字或课本编号**（"第二类基本问题(已知力求运动)"
+  "平行轴定理""动能定理""莱布尼茨判别法"）；若同目录有配套《学习笔记》，把原理名做成指向对应小节的
+  链接（`<a href="…学习笔记.html#sX-Y" target="_blank">`）方便点开复习。
+- **每题必带二件套 callout**：① `.callout intuition`（直觉）——物理 / 几何图景或"为什么这个结果合理"；
+  ② `.callout mistake`（易错）——本题最易踩的坑（符号、方向、条件遗漏）。
+  能即时验的小检查可顺手写进步骤正文（"$t=0$ 代回：括号内 $1-1=0$，与初值吻合"），但**不要**单立读者侧的
+  「检验」框。
+- **不要单独的「检验」框**（用户偏好，2026-06-26）：量纲 / 极限 / 特例那种面向读者的核验段落**省略**——
+  答案的正确性已由 §0.5 的 sympy 可执行门（`已核验 ✓`）把关，无需再向读者展示一遍量纲/极限检验，徒增冗长。
+- **答案醒目**：每个最终结果（多问就每问）单独一个 `.answer-box`。
+- **顶部 `.lead`/`.callout note` 用法说明** + 核验图例（图例写 `<strong>已核验 ✓</strong>` 或 `.lgnd` 小 chip，
+  **不要**用真 `<span class="badge">`，以免被核验门计成无据徽章）；`<summary>` 写"查看解答"并把已核验徽章放进 summary。
+
+> 反面教材（不要再犯）：某次数学作业解答每题只有 ~4.7 步、**公式 `.fnote` 为 0**、无直觉 / 易错框、
+> 还用自造 `.why` 标签框堆理由——被用户判"没范本写得好"。差距全在上面这几条。（注：读者侧「检验」框
+> 用户后来明确说不要，已从规范移除——别再写它。）
+
+这条同时是 **Check 6（外部交叉审查）** 的硬项：codex 要逐题检查"有无跳步、每一步是否给出理由、是否对齐
+范本呈现规范（步骤够细 / 每式有 `.fnote` / 有直觉·易错·检验）"，发现"光有步骤没有为什么"或"显然 / 易得式
+跳步"或"呈现过于潦草"一律报问题（见下文 Check 6 提示词第 ⑦ 项）。
+
+---
+
 ## MODE A — PDF 学习笔记模式 (PDF → Study Notes)
 
 **Activate this mode** when the user uploads a PDF textbook or course material and asks for 学习笔记 / 复习笔记 / review notes / organised notes from the book. (With no PDF and only a topic, use the same Content Structure from scratch — "MODE A scratch".)
@@ -185,7 +242,7 @@ this is the fix for "MODE B 有时候题都做不对".
 
 ### Hard rules (summary — full templates in `references/problem-solutions.md`)
 
-1. **One card per problem.** Always-visible: 题号 + 完整题目文字 + 题目图. Collapsible `<details>`: 解答 (every step), with the final result in an `.answer-box`. Multi-part problems: label `(1) (2) (3)`, each with its own answer.
+1. **One card per problem.** Always-visible: 题号 + 完整题目文字 + 题目图. Collapsible `<details>`: 解答 (every step **with its 「为什么」reason — §0.6 铁律，禁止跳步；按 §0.6『解答呈现规范』写：步骤够细一步一动作、每个公式配 `.fnote`、理由融入叙述、点名原理、每题带「直觉+易错」二件套（不要读者侧「检验」框）**), with the final result in an `.answer-box`. Multi-part problems: label `(1) (2) (3)`, each with its own answer.
 
 2. **Figure rule (IMPORTANT — never drop a figure the problem depends on, never ship a wrong one):**
    - **First ask: did the problem COME WITH a figure?** (a textbook/worksheet figure, photo, scan, graph, circuit, mechanism — or even a simple line sketch.) **If yes → embed the ORIGINAL, do NOT redraw it as SVG even if it looks simple.** Crop it from the upload and inline it as a base64 `<img>` (`scripts/extract_pdf.py crop ...` for a PDF page, or `scripts/embed_images.py datauri <png>`); the HTML stays one self-contained file (never external `src`). Redrawing a figure you already have is pure downside — it routinely drops an element (a flat-top 导板 becoming a bare rod) or misplaces labels. This is the common case for homework from a book/worksheet.
@@ -253,7 +310,7 @@ flashcards; one card per high-value fact/formula/pitfall.
 2. **Rigorous definition or statement** — precise, in a `.fbox` with LaTeX. Every symbol explained. Meet the **Rigor standard** below (textbook-grade: full premises, scope, signs/boundaries; standard, consistent terminology).
 3. **Derivation or proof** — full derivation inside a collapsible `<details>` block. Do not skip steps; a student should be able to follow line by line. If multiple derivation routes exist, show the most illuminating one in the collapsible, mention the alternative in text.
 4. **Special cases and limits** — what happens at boundary conditions, extreme values, or degenerate cases. These are high-value for understanding and often tested.
-5. **Worked examples** — start simple (builds confidence), end at exam difficulty. Show every algebraic step. Minimum 2 examples per section; more for computation-heavy topics.
+5. **Worked examples** — start simple (builds confidence), end at exam difficulty. Show every algebraic step **and the reason for each step (§0.6 铁律：每步讲清「为什么」，不偷步漏步)**. Minimum 2 examples per section; more for computation-heavy topics.
 6. **Common mistakes** — `.mistake` callout. Be specific: not just "be careful with signs" but "students forget the negative sign in the $\hat{\boldsymbol{j}}$ component of the curl because the cofactor expansion alternates $+,-,+$".
 7. **Connections** — explicitly state how this concept relates to others in the notes, or to topics from prerequisite courses. Use cross-references like "compare with §3 where we showed...".
 8. **Exam tips** — `.exam` callout. What to memorize, what can be derived on the spot, typical question formats.
@@ -442,7 +499,8 @@ mcp__codex__codex(
            ④图与正文/题目是否相符
            ⑤量纲、单位、特例与边界是否合理
            ⑥表述是否达到教科书级的严谨：定义/定理/条件与结论的陈述精确完整（前提、适用范围、正负号、边界不缺不含糊），术语与记号规范统一，无口语化、似是而非或想当然的断言——直觉铺垫可通俗，正式定义与结论必须严谨。
-           逐条给出：问题位置（章节/小节/题号）+ 为什么错 + 应改成什么。只报问题，不要重写整篇。",
+           ⑦【每步讲清为什么 + 呈现规范·铁律 §0.6】每道解答/例题：(a) 每一步是否都给出理由——为什么用这个方法、为什么这个等式/不等式成立、这个 N/界/取值怎么来的、依据哪条定理/公式/定义；有无用"显然/易得/同理/不难看出"掩盖的跳步、有无"只列步骤不讲为什么"。(b) 是否对齐范本呈现规范：步骤是否够细（一步一动作，不是 3–4 步草草带过）、**每个公式下是否都有 `.fnote` 注释**（这一步在做什么/符号含义）、是否点名所用原理、每题是否带「直觉 intuition + 易错 mistake」二件套、理由是否融入叙述而非生硬标签框。凡跳步、缺理由、缺 `.fnote`、缺直觉/易错框、或呈现过于潦草处逐一指出。（注：读者侧「检验」框用户明确不要，**不要**因缺它而报问题；正确性由 sympy 门把关，§0.6 内部仍可做核验，只是不向读者展示。）
+           逐条给出：问题位置（章节/小节/题号）+ 为什么错/为什么跳步 + 应改成什么/应补什么理由。只报问题，不要重写整篇。",
   cwd: "<ABS_OUTPUT_DIR>", sandbox: "read-only", approval-policy: "never"
 )
 ```

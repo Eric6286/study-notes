@@ -23,6 +23,11 @@ Static checks (catch the SILENT failures KaTeX never reports):
   8. SVG safe-subset offset risks (WARN)        (nested <svg>, % geometry, <foreignObject>,
                                                  CSS transform/transform-origin inside an SVG —
                                                  constructs that cause "mysterious offset")
+  9. .step flex-child block layout (WARN)       (a .fbox/.callout/.answer-box/.big-formula or <p>
+                                                 placed as a DIRECT child of .step — a sibling of
+                                                 .step-body, not nested inside it — squeezes the
+                                                 text body to ~0 width and CJK shatters to one
+                                                 character per line)
 
 Exit code: 0 = clean, 1 = one or more FAIL-level problems.
 \boxed is reported as a WARNING (allowed only in plain prose), and does not by
@@ -245,6 +250,46 @@ def check_svg_offset_risks(html):
     return hits
 
 
+# .step is display:flex (step-num + step-body side by side). A block element placed as a DIRECT
+# child of .step — a .fbox/.callout/.answer-box/.big-formula or a <p>, i.e. a SIBLING of
+# .step-body rather than nested INSIDE it — becomes a third flex item. A wide display formula's
+# min-content width then squeezes .step-body toward 0, and CJK text wraps one character per line
+# (the "vertical-text shatter"). The design-system CSS now auto-corrects this (.step{flex-wrap}
+# + .step>.fbox{flex-basis:100%}), so this is WARN-level; still flag it so the nesting gets
+# cleaned up (put the fbox INSIDE .step-body, or close .step before the fbox). Real case: a MODE-C
+# homework set where 4 solutions shattered because solver output was
+# <div class="step-body">…</div><div class="fbox">…</div> with the fbox as a .step child.
+_STEP_OPEN = re.compile(r'<div\s+class="step"\s*>')
+_STEP_TOK = re.compile(r'<div\b[^>]*>|</div\s*>|<p\b[^>]*>')
+
+
+def check_step_flex_children(html):
+    """WARN-level. Return sorted (line, what) for block elements that are DIRECT children of a
+    .step flex container (siblings of .step-body) — they squeeze the text body and shatter CJK."""
+    hits = []
+    for sm in _STEP_OPEN.finditer(html):
+        start = sm.end()
+        depth = 1
+        for t in _STEP_TOK.finditer(html[start:]):
+            tok = t.group()
+            if tok.startswith("</div"):
+                depth -= 1
+                if depth == 0:
+                    break
+            elif tok.startswith("<div"):
+                if depth == 1:
+                    cm = re.search(r'class="([^"]*)"', tok)
+                    cls = cm.group(1) if cm else ""
+                    if any(k in cls for k in ("fbox", "callout", "answer-box", "big-formula")):
+                        hits.append((line_of(html, start + t.start()), "." + cls.split()[0]))
+                depth += 1
+            else:  # <p ...> at this nesting level
+                if depth == 1:
+                    hits.append((line_of(html, start + t.start()), "<p>"))
+    hits.sort()
+    return hits
+
+
 def check_div_balance(html):
     opens = len(re.findall(r"<div\b", html))
     closes = len(re.findall(r"</div\s*>", html))
@@ -368,6 +413,20 @@ def run_checks(path):
         print("       (WARN only -- does not fail the build. Render the file and eyeball the figure.)")
     else:
         print("[ok]  no SVG safe-subset offset risks")
+
+    step_hits = check_step_flex_children(html)
+    if step_hits:
+        print(f"\n[WARN] {len(step_hits)} block element(s) placed as a DIRECT child of .step "
+              "(sibling of .step-body):")
+        for ln, what in step_hits[:20]:
+            print(f"  line {ln}: {what} is a .step child -- nest it INSIDE .step-body, or close .step first")
+        if len(step_hits) > 20:
+            print(f"  ... and {len(step_hits) - 20} more")
+        print("       A wide formula here squeezes .step-body to ~0 width and CJK text shatters to")
+        print("       one char per line. The design-system .step>.fbox CSS auto-corrects rendering,")
+        print("       but fix the nesting for clean structure. (WARN only -- does not fail the build.)")
+    else:
+        print("[ok]  no block elements misplaced as .step flex children")
 
     print()
     if fails:
