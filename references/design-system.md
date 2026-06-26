@@ -228,10 +228,24 @@ details[open] summary::before{transform:rotate(90deg);}
 .details-body{padding:18px 20px;}
 .details-body p{margin-bottom:8px;font-size:14px;}
 
-/* Steps */
-.step{display:flex;gap:14px;margin-bottom:16px;}
+/* Steps —
+   .step is a flex row: [step-num] [step-body]. The IDEAL nesting puts every formula/callout
+   INSIDE .step-body. But a block (.fbox/.callout/.answer-box/.big-formula or a <p>) sometimes
+   ends up as a DIRECT child of .step (a sibling of .step-body) — e.g. a solver agent emits
+   <div class="step-body">…</div><div class="fbox">…</div>. Without the guards below that block
+   becomes a third flex item, and a wide display formula's min-content width squeezes .step-body
+   toward 0 so CJK text shatters to ONE CHARACTER PER LINE (a real MODE-C failure: 4 solutions
+   rendered as vertical columns of single chars). Three load-bearing guards make .step robust to
+   that mis-nesting:
+     • flex-wrap:wrap            — lets a stray block move to its own line instead of competing
+     • .step-body{flex:1 1 0;min-width:0} — min-width:0 lets the text body shrink/wrap normally
+                                    (default min-width:auto is what lets a sibling starve it)
+     • .step>BLOCK{flex:0 0 100%} — forces any stray block child to a full-width row BELOW
+   build_and_check.py also WARNs on the mis-nesting so it gets cleaned up at the source. */
+.step{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;}
 .step-num{width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
-.step-body{flex:1;font-size:14px;line-height:1.75;}
+.step-body{flex:1 1 0;min-width:0;font-size:14px;line-height:1.75;}
+.step>.fbox,.step>.callout,.step>.answer-box,.step>.big-formula,.step>p{flex:0 0 100%;width:100%;box-sizing:border-box;margin-top:0;}
 /* Step title: direct-child strong only */
 .step-body > strong{display:block;margin-bottom:4px;}
 .step-body p strong,.step-body li strong{display:inline;font-weight:700;}
@@ -280,6 +294,16 @@ details[open] summary::before{transform:rotate(90deg);}
    still be correct (amber "heads-up" box, deliberately NOT red so it doesn't read as "wrong"). */
 .b-verified{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green);font-weight:700;}
 .b-unverified{background:var(--amber-light);color:var(--amber-dark);border:1px solid var(--amber);}
+
+/* "How to use" lead box at top of a solutions page (用法说明 + 核验图例). */
+.lead{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:28px;}
+.lead p{margin-bottom:8px;}
+.lead a{color:var(--blue);font-weight:600;}
+/* Legend chip — looks like a verification badge but is NOT counted as one (class is .lgnd, not .badge),
+   so a legend that demonstrates 已核验/未自动核验 never inflates the badge gate. Use ONLY in the legend. */
+.lgnd{display:inline-block;padding:1px 8px;border-radius:4px;font-size:12px;font-weight:700;}
+.lg-v{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green);}
+.lg-u{background:var(--amber-light);color:var(--amber-dark);border:1px solid var(--amber);}
 
 /* Example blocks — no fixed height, no max-height, no writing-mode.
    The header is a horizontal strip at the top; content expands to fit.
@@ -775,9 +799,61 @@ details[open] summary::before{transform:rotate(90deg);}
 })();
 </script>
 
+<!-- ── Mobile formula-fit (MANDATORY) ──
+   Horizontal scroll on a phone READS AS BROKEN: a wide display formula stops part-way, its
+   left half is clipped, and a lone √ vinculum looks like a stray over-line (real user report).
+   So instead of scrolling, shrink any overflowing display formula to fit its column. -->
+<script>
+(function(){
+  function fit(){
+    document.querySelectorAll('.katex-display').forEach(function(el){
+      var avail = el.clientWidth; if(avail < 10) return;            // not yet rendered (content-visibility) → skip
+      var k = el.querySelector('.katex'); if(!k) return;
+      if(!k.dataset.fitBase) k.dataset.fitBase = parseFloat(getComputedStyle(k).fontSize) || 16;
+      k.style.fontSize = k.dataset.fitBase + 'px';                  // reset, then re-measure
+      var need = k.scrollWidth;
+      if(need > avail + 1){
+        var s = Math.max(avail / need, 0.4) * 0.99;                 // floor 0.4 keeps it legible
+        k.style.fontSize = (k.dataset.fitBase * s) + 'px';
+      }
+    });
+  }
+  window.addEventListener('katexdone', function(){ setTimeout(fit, 60); setTimeout(fit, 300); }, {once:true});
+  window.addEventListener('load', function(){ setTimeout(fit, 200); });
+  var rt; window.addEventListener('resize', function(){ clearTimeout(rt); rt = setTimeout(fit, 200); }, {passive:true});
+  var st; window.addEventListener('scroll', function(){ clearTimeout(st); st = setTimeout(fit, 160); }, {passive:true});
+})();
+</script>
+
 </body>
 </html>
 ```
+
+### Mobile formula-fit + verification (MANDATORY — learned 2026-06-23)
+
+Horizontal-scrolling a wide display formula is fine on desktop but **reads as broken on a phone**:
+the formula stops part-way, its left half is clipped, a lone `\sqrt` vinculum looks like a stray
+over-line, and the thin scrollbar reads as a misplaced grey line. Two defenses, both required:
+
+1. **The fit script above** (in the template `<body>` foot) auto-shrinks any overflowing
+   `.katex-display` to fit its column. Copy it verbatim.
+2. **Split "one row, many equations".** Never put `$$A=…,\quad B=…,\quad C=…$$` on one `.frow`;
+   give each equation its own `<div class="frow">$$…$$</div>`. The fit script is the safety net;
+   short rows are the real fix.
+
+**Verify before shipping (do NOT claim "done" on static/numeric gates alone):** serve the file
+(a local `http.server` — `file://` is blocked in headless Chromium) and render it at **390 px
+width**. Assert every `.katex-display` has `scrollWidth - clientWidth ≤ 2` (overflow = 0) and
+`.katex-error` count = 0. **Also assert text columns didn't collapse:** every `.step-body` (and
+`.example-body`, `.callout-body`) must have a sane rendered width — `getBoundingClientRect().width`
+well above a few characters (e.g. `> 120px` at 390 px viewport). A near-zero body width means CJK
+has shattered to one character per line (a block mis-nested as a `.step` flex child squeezing the
+text — see the `.step` CSS note). **Measuring only formula overflow misses this** — it shipped a
+real "vertical text" bug because the earlier render-check probed `.katex-display` but never the
+prose body width. Then **screenshot every figure and eyeball it** — the numeric/static
+gates cannot see a reversed phasor, a missing component, or an invisible arrow. Cache-bust with
+`?v=N` after each rebuild, and **re-send the file to the user** after edits (they may be looking
+at a stale copy).
 
 ---
 
@@ -1030,7 +1106,15 @@ Common:       → ← ↑ ↓ ↗ ↘  ∝ ≈ ≠ ≤ ≥ ∞ ± × ÷ √ ∫ 
 
 ## Vector Notation in KaTeX
 
-Vectors in inline and display math must use **arrow notation** (`\vec{}`) for single-letter symbols, which is unambiguous and standard in Chinese university physics/math courses. Bold alone (`\boldsymbol{}`) is hard to distinguish from a regular letter in body text.
+Vectors in inline and display math must use **arrow notation** for single-letter symbols, which is unambiguous and standard in Chinese university physics/math courses. Bold alone (`\boldsymbol{}`) is hard to distinguish from a regular letter in body text.
+
+> **Use `\overrightarrow{}` in prose, not `\vec{}` (learned 2026-06-23).** KaTeX's `\vec` arrow is
+> a tiny combining glyph that is **nearly invisible at body/mobile font sizes** — a real user
+> twice reported "公式没标向量" when the source did use `\vec`. Prefer `\overrightarrow{U}` /
+> `\overrightarrow{U}_R` in running text and figure captions, where the arrow must be obvious.
+> `\vec` is acceptable only inside large display formulas. And when you write a vector *sum* in
+> prose, state the magnitude relation explicitly so it can't be misread as scalar addition, e.g.
+> "$\overrightarrow{U}=\overrightarrow{U}_R+\overrightarrow{U}_L$（矢量和，$U\ne U_R+U_L$）".
 
 ### Rules
 

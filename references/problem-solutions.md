@@ -64,11 +64,17 @@ One `.card` per problem. Structure: **题号 + 题目文字 (visible) → 图 (v
         <div class="fbox"><div class="frow">$$\Delta E = \tfrac12 m_1 v_0^2 - \tfrac12 (m_1+m_2)v^2$$</div></div>
         <div class="answer-box"><p>$\Delta E = 9 - 3 = 6\,\text{J}$</p></div>
 
-        <div class="callout tip">
+        <div class="callout intuition">
           <div class="callout-icon"></div>
-          <div class="callout-body"><strong>检验</strong>
-            <p>完全非弹性碰撞必损失能量，$\Delta E>0$ ✓；末速度介于 0 与 $v_0$ 之间 ✓。</p></div>
+          <div class="callout-body"><strong>直觉</strong>
+            <p>两块粘在一起后一起走，动量这块"账"在碰撞瞬间没漏（外力冲量可忽略），但动能转成了热和形变，所以速度落在 0 与 $v_0$ 之间、能量必有损失。</p></div>
         </div>
+        <div class="callout mistake">
+          <div class="callout-icon"></div>
+          <div class="callout-body"><strong>易错</strong>
+            <p>完全非弹性碰撞**不能**用机械能守恒列方程（能量不守恒）；只能用动量守恒求 $v$，再单独算能量损失。</p></div>
+        </div>
+        <!-- 注意：不再放读者侧「检验」框（量纲/极限核验）——用户偏好，正确性由 sympy 可执行门把关。 -->
       </div>
     </details>
   </div>
@@ -76,10 +82,23 @@ One `.card` per problem. Structure: **题号 + 题目文字 (visible) → 图 (v
 </div>
 ```
 
-Rules:
-- `<summary>` says only `解答` (or `解答 (1)(2)` for parts) — never reveal the answer in the summary.
-- Every solution **step** shown; final result(s) in `.answer-box`. Multi-part → one `.answer-box` per part, labelled `(1) (2) (3)`.
-- Add a short **检验 (sanity check)** as a `.tip` callout at the end of each solution: units, limits, sign, magnitude.
+Rules （解答呈现规范 — 对齐金标准范本《理论力学·动力学作业详解》，完整说明见 SKILL.md §0.6『HTML 落地』）:
+- `<summary>` 写 `查看解答` 并把已核验徽章放进去（`查看解答 <span class="badge b-verified">已核验 ✓</span>`）；never reveal the answer in the summary.
+- **步骤要细，用 `.step`，一步一个动作**（识别题型 → 选对象/建系画受力 → 列方程 → 变形/分离变量 → 代入初值 →
+  积分求解 → 反解 → 取极限/特例 → 即时小检验），范本约 **7–8 步/题**，别用 3–4 步草草带过。
+  `step-body` 先一句**加粗的"这一步在干什么"**，紧跟**融入式口语化叙述**把"为什么这么做、为什么这样变形更顺手、
+  用的是哪条原理"讲清楚——像老师边写边讲，**不要**塞进生硬的"为什么：…"标签框或自造 `.why` 类。
+- **每个公式都配 `.fnote`**：每个 `.fbox` 算式下用 `<div class="fnote">` 写一行——这一步在做什么
+  （"两边同除以 $m$""分离变量后的形式"）或新符号含义（"$\eta$ 阻尼系数，向下为正"）。**不留没注释的公式。**
+- **点名原理、能链则链**：用到的定理/方法写出名字或课本编号；同目录有配套《学习笔记》就把原理名链到对应小节
+  （`<a href="…学习笔记.html#sX-Y" target="_blank">`）。
+- **每题二件套 callout**：`.callout intuition`（直觉：物理/几何图景或"为什么结果合理"）+ `.callout mistake`
+  （易错：本题最易踩的符号/方向/条件坑）。**不要**单立读者侧「检验」框（量纲/极限核验）——用户偏好，
+  正确性由 §0.5 sympy 可执行门把关；想做的小检查可顺手融进步骤正文（如"代回初值吻合"）。
+  禁止用"显然/易得/同理/不难看出"掩盖跳步；能即时验的小检查直接写进步骤。
+- Final result(s) in `.answer-box`. Multi-part → one `.answer-box` per part, labelled `(1) (2) (3)`.
+- 顶部放 `.lead`（或 `.callout note`）用法说明 + 核验图例（图例用 `<strong>已核验 ✓</strong>` 或 `.lgnd` 小 chip，
+  **不要**用真 `<span class="badge">`，以免被核验门计成无据徽章）。
 - TOC lists `第 1 题 / 第 2 题 / …` (one `.toc-l1` per problem). Cycle section colors per problem or per group.
 
 ---
@@ -171,3 +190,7 @@ In MODE B the homework problem lives **inside the concept section that teaches i
 ```
 
 Difference from MODE C: the summary may say `解答与思路`, and the solution should **point back to the concept just taught** ("用刚才 §2.3 的动量守恒") so the problem reinforces the lesson. End the chapter with a `本章习题自测` card listing each 作业 题 + a one-line `考点` tag.
+
+Same as MODE C, the **每步讲清「为什么」铁律 + 解答呈现规范 (SKILL.md §0.6)** applies here too: 步骤要细、
+每步先加粗"做什么"再融入式讲"为什么"（不用生硬的 `.why` 标签框）、**每个公式配 `.fnote`**、点名所用原理
+（能链就链到本章对应小节）、每题带「直觉 + 易错」二件套（不要读者侧「检验」框），no 显然/易得 跳步。范本：《理论力学·动力学作业详解》。

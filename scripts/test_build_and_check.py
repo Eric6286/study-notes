@@ -67,6 +67,15 @@ TO_SVG = ("<svg viewBox=\"0 0 100 100\" width=\"100\"><g style=\"transform-origi
 ATTR_OK = ("<svg viewBox=\"0 0 100 100\" width=\"100\"><g transform=\"rotate(30 50 50)\">"
            "<rect x=\"1\" y=\"1\" width=\"5\" height=\"5\"/></g></svg>")
 
+# .step flex-child mis-nesting: a block as a DIRECT child of .step (sibling of .step-body, not
+# nested inside it) becomes a flex item and shatters CJK to one char per line.
+STEP_BAD = ("<div class=\"step\"><div class=\"step-num\">1</div><div class=\"step-body\">文字</div>"
+            "<div class=\"fbox\"><div class=\"frow\">$x=1$</div></div></div>")
+STEP_OK_NESTED = ("<div class=\"step\"><div class=\"step-num\">1</div><div class=\"step-body\">文字"
+                  "<div class=\"fbox\"><div class=\"frow\">$x=1$</div></div></div></div>")  # fbox INSIDE body
+STEP_OK_AFTER = ("<div class=\"step\"><div class=\"step-num\">1</div><div class=\"step-body\">文字</div></div>"
+                 "<div class=\"fbox\"><div class=\"frow\">$x=1$</div></div>")  # fbox AFTER step closes
+
 
 def run():
     # 1. macros the file defines are recognised
@@ -149,7 +158,19 @@ def run():
     assert b.check_svg_offset_risks(ATTR_OK) == [], \
         f"SVG transform attribute wrongly flagged: {b.check_svg_offset_risks(ATTR_OK)}"
 
-    print("OK  build_and_check regression tests passed (20/20)")
+    # 17. a .fbox placed as a DIRECT child of .step (sibling of step-body) is flagged
+    hits = b.check_step_flex_children(STEP_BAD)
+    assert hits and ".fbox" in {w for _, w in hits}, f".fbox as .step flex child must be caught, got {hits}"
+
+    # 18. a .fbox nested INSIDE .step-body is NOT flagged (the correct nesting)
+    assert b.check_step_flex_children(STEP_OK_NESTED) == [], \
+        f"fbox inside step-body wrongly flagged: {b.check_step_flex_children(STEP_OK_NESTED)}"
+
+    # 19. a .fbox AFTER the .step closes (sibling of .step, not a child) is NOT flagged
+    assert b.check_step_flex_children(STEP_OK_AFTER) == [], \
+        f"fbox after step close wrongly flagged: {b.check_step_flex_children(STEP_OK_AFTER)}"
+
+    print("OK  build_and_check regression tests passed (23/23)")
 
 
 if __name__ == "__main__":
