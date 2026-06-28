@@ -151,6 +151,12 @@ A problem's answer is not "done" until ALL applicable boxes pass:
 - [ ] **A problem that GIVES an equation and asks for its derivative** is solved by differentiating
       the GIVEN expression with `sympy` — never by pasting a remembered "standard"/textbook result.
 - [ ] **Independent re-solve agrees** (blind double-solve; for important problems a third route).
+- [ ] **Inputs read off a FIGURE are verified, not just the answer** — any geometry/label taken from a
+      diagram (which point/edge, near vs far, length vs gap, above vs below, left vs right) is
+      re-checked by **re-deriving a quantity the problem already pins down** (a printed range, a given
+      total, a stated result) from your read values. A blind double-solve canNOT catch a mis-read
+      figure — both solves inherit the same wrong setup; only re-deriving an independent given does.
+      (Cautionary case: 劳埃德镜 — mirror length/position read backwards.)
 - [ ] **Executable check passes** — the solution carries a `<script type="text/x-verify">` block that
       recomputes from the **given** data, and `verify_solutions.py` runs it GREEN. Only then may it
       carry `已核验`; otherwise tag `未自动核验`. A written-down note alone is NOT enough — the gate is

@@ -127,12 +127,22 @@ Decision:
 
 The HTML must remain a single self-contained file, so embed images as base64 data-URIs (no external `src`).
 
-**Option A — crop straight from a PDF page** (best when the worksheet is a PDF):
+**Option A — crop straight from a PDF page** (best when the source is a PDF). A **scanned textbook has no text layer**, so first OCR-**locate** the page, then **autocrop** the figure by its caption — the bbox is *detected* (column gutters + the figure's own 图X.Y caption + tighten-to-ink), never hand-typed:
 
 ```bash
-# bbox is fractional (x0,y0,x1,y1) measured from the top-left of the page
-python3 scripts/extract_pdf.py crop homework.pdf --page 2 --bbox 0.08,0.18,0.92,0.52 -o fig_q3.png
+# 1. find which page the problem is on (a scanned book can't be grepped):
+python3 scripts/extract_pdf.py locate textbook.pdf 劳埃德 洛埃 --pages 2-40
+# 2. list the figures on that page, then auto-crop one by its caption:
+python3 scripts/extract_pdf.py autocrop textbook.pdf --page 3 --list
+python3 scripts/extract_pdf.py autocrop textbook.pdf --page 3 --caption "图4.4" -o fig_q3.png
 python3 scripts/embed_images.py datauri fig_q3.png      # prints: data:image/png;base64,iVBORw0...
+```
+
+> **Why not type the bbox by hand?** An eyeballed `--bbox` is exactly what clips half a figure (a source point, a `2a` label) — the same eyeball error as paraphrasing a figure's geometry (§3). `autocrop` removes the guess. Fall back to the hand-bbox `crop` below **only** when the figure has no 图X.Y caption to anchor on (a bare photo, a non-textbook scan):
+
+```bash
+# fallback — hand-specified fractional bbox (x0,y0,x1,y1 from the top-left), no caption to anchor:
+python3 scripts/extract_pdf.py crop homework.pdf --page 2 --bbox 0.08,0.18,0.92,0.52 -o fig_q3.png
 ```
 
 **Option B — from a photo/PNG/JPG the user uploaded**:
@@ -161,6 +171,7 @@ Image hygiene:
 - Always give a meaningful `alt` (e.g. `第3题图`).
 - Crop tightly to the figure; don't include surrounding problem text in the crop (the text is already transcribed above the image).
 - Prefer PNG for line art/diagrams; JPG is fine for photos. Keep crops ≤ ~1600px wide to keep the file small.
+- **A clean crop prevents mis-reading the figure; an x-verify catches it if you still do.** If you transcribed any number/geometry off the figure to solve, add a `<script type="text/x-verify">` block that re-derives a quantity the problem already prints (a range, a count, a stated answer) from your read values — see the `workflow-orchestration.md` checklist. (劳埃德镜: reading the mirror as 20cm-not-30cm recomputes **15** fringes, not the printed **33** → the gate FAILs the mis-read, no human review needed.)
 
 ---
 

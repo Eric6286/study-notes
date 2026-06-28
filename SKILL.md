@@ -82,6 +82,20 @@ checks it, and does arithmetic in its head. The workflow cures both:
   `未自动核验` (abstain), **never** `已核验`. A false `已核验` is worse than none (same honesty rule
   as `.src-ref`). Full convention: `references/design-system.md` → "已核验 verification — the
   EXECUTABLE gate". **Never pass the claimed answer in as the recomputation** — that defeats the gate.
+- **`未自动核验` is abstention from the AUTO gate, NOT from checking — and never a place to park a
+  shaky answer.** A `未自动核验` tag means only "no clean *executable* check exists"; it does **not**
+  mean "unreviewed" or "probably fine". Every abstained item must still be **independently
+  hand-verified for correctness AND for internal consistency with the rest of the document** — the
+  same signs, directions, and conventions used the same way across cards (e.g. 斜入射 must shift the
+  pattern the same way in the 双缝, 单缝, and 光栅 cards, and a part-(1) result must not contradict
+  part-(3)). A `未自动核验` solution that is actually wrong, or that contradicts another section, is a
+  **hard failure**, not an honest abstention. **Never silently ship anything you yourself flagged as
+  uncertain** — resolve it (re-solve & fix) or explicitly surface it to the user; a self-flagged
+  error that ships reads as careless, because you already suspected it. Best of all, *convert* the
+  abstention into a real gate: **instantiate the symbolic answer with concrete numbers** and assert
+  them with `check_numeric` (plug in φ, d, D, λ, n …, then assert e.g. the zero-order sign, fringe
+  spacing, and film thickness) — a numeric instance earns `已核验` where a purely symbolic problem
+  can't. Cautionary case: `references/lessons-learned.md` (2026-06-27, 斜入射双缝).
 - **Ground in the source.** If a chapter PDF/notes are given, the method must match what the
   chapter teaches; cite formula numbers.
 
@@ -249,8 +263,19 @@ this is the fix for "MODE B 有时候题都做不对".
 1. **One card per problem.** Always-visible: 题号 + 完整题目文字 + 题目图. Collapsible `<details>`: 解答 (every step **with its 「为什么」reason — §0.6 铁律，禁止跳步；按 §0.6『解答呈现规范』写：步骤够细一步一动作、每个公式配 `.fnote`、理由融入叙述、点名原理、每题带「直觉+易错」二件套（不要读者侧「检验」框）**), with the final result in an `.answer-box`. Multi-part problems: label `(1) (2) (3)`, each with its own answer.
 
 2. **Figure rule (IMPORTANT — never drop a figure the problem depends on, never ship a wrong one):**
-   - **First ask: did the problem COME WITH a figure?** (a textbook/worksheet figure, photo, scan, graph, circuit, mechanism — or even a simple line sketch.) **If yes → embed the ORIGINAL, do NOT redraw it as SVG even if it looks simple.** Crop it from the upload and inline it as a base64 `<img>` (`scripts/extract_pdf.py crop ...` for a PDF page, or `scripts/embed_images.py datauri <png>`); the HTML stays one self-contained file (never external `src`). Redrawing a figure you already have is pure downside — it routinely drops an element (a flat-top 导板 becoming a bare rod) or misplaces labels. This is the common case for homework from a book/worksheet.
+   - **First ask: did the problem COME WITH a figure?** (a textbook/worksheet figure, photo, scan, graph, circuit, mechanism — or even a simple line sketch.) **If yes → embed the ORIGINAL, do NOT redraw it as SVG even if it looks simple.** Crop it from the upload and inline it as a base64 `<img>` — for a **scanned PDF** (no text layer) use `scripts/extract_pdf.py locate` to find the page, then `autocrop --caption 图X.Y` to cut the figure (the bbox is **auto-detected** from the figure's own column + caption, never hand-typed — a hand-typed `--bbox` clips half a figure the same way paraphrasing its geometry does); or `scripts/embed_images.py datauri <png>` for an uploaded photo. The HTML stays one self-contained file (never external `src`). Redrawing a figure you already have is pure downside — it routinely drops an element (a flat-top 导板 becoming a bare rod) or misplaces labels. This is the common case for homework from a book/worksheet.
    - **Only when the problem has NO figure of its own** (text-only problem, or a diagram you add purely to aid understanding) → draw a **minimal, faithful inline SVG**, following the **SVG-safe-subset** in `references/design-system.md` (single root `<svg>`, absolute viewBox coords, no nested `<svg>`/`%`/`foreignObject`/CSS-`transform`; `build_and_check.py` WARNs on those), then **render the file and eyeball every figure**. If you can't reproduce the setup faithfully and simply, **describe it in words instead — never ship a figure that contradicts the problem.** Don't invent a figure that wasn't given.
+   - **The figure is GROUND TRUTH — don't restate its geometry from memory, and don't "tidy up" the
+     problem by spelling out distances you read off it.** Even when you keep the figure, never
+     paraphrase its layout into your own prose/parameters — e.g. rewriting 「如图」 into 「镜长 20cm、镜到屏
+     30cm」 — because that paraphrase is exactly where **near↔far, length↔gap, above↔below, 左↔右**
+     silently flip. Keep the original wording + figure and quote each given number **verbatim**. If you
+     must extract a parameter to solve, transcribe each label exactly, then **cross-check your reading
+     by re-deriving a quantity the problem already pins down** (a printed range, a given total, a stated
+     answer) from those parameters — if it doesn't reproduce, you mis-read the figure: re-read before
+     solving. A blind double-solve canNOT catch this — both solves inherit the same mis-read setup;
+     only re-deriving an independent given does. Cautionary case: `references/lessons-learned.md`
+     (2026-06-28, 劳埃德镜：把「镜30cm紧贴墙、距源20cm」读成「镜20cm、距屏30cm」，D=50cm 与 33 条答案竟因数字巧合保住，但所述几何其实给出 3mm~∞ 的条纹区、与印出的「0~3mm」自相矛盾).
    - Full decision rule + crop/embed how-to: `references/problem-solutions.md` §3.
 
 3. **Answers must be correct — verify every one.** Run the **blind double-solve + verification checklist** in `references/workflow-orchestration.md` for each problem: solve, then independently re-solve from the statement alone; do every non-trivial number with `python3` / `sympy` (no mental math); dimensional/units check, limiting cases, substitute the answer back, order-of-magnitude plausibility; state assumptions when ambiguous. If the two solves disagree, reconcile before shipping. Don't hand-wave a step the student would get stuck on. Tag a solution `已核验 ✓` **only after** its `<script type="text/x-verify">` block PASSES `python scripts/verify_solutions.py <file>.html` (the script recomputes from the given data with sympy and compares); a problem with no clean machine-checkable form is tagged `未自动核验`, never `已核验`. A false `已核验` is worse than none. For ≥6 independent problems, run this as a dynamic workflow / parallel subagents (one per problem).
